@@ -19,7 +19,8 @@ namespace NFMStuffApp
                 result = value;
                 return true;
             }
-            if (CLR.ImplementsInterface(type, typeof(IParsable<>)))
+            Type genericType = typeof(IParsable<>).MakeGenericType(type);
+            if (type.GetInterfaces().Any(x => x == genericType))
             {
                 try
                 {

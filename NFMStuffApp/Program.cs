@@ -332,12 +332,23 @@ namespace NFMStuffApp
         public static void SetGroupOutline(int GroupIndex, bool Value)
         {
             Console.WriteLine();
-            int polycount = 0;
             foreach (Polygon p in Program.CurrentCar.MaterialGroups[GroupIndex].Polygons)
             {
                 p.NoOutline = Value;
             }
-            Console.WriteLine($"Value of \'noOutline\' has been {(Value ? "added to" : "removed from")} {polycount} - Polygons in group [{GroupIndex}]");
+            Console.WriteLine($"Value of \'noOutline\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.MaterialGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            Console.WriteLine();
+        }
+
+        [Command(CommandName = "car.groups.setgr", VerifyCarLoaded = true)]
+        public static void SetGroupGr(int GroupIndex, int Value)
+        {
+            Console.WriteLine();
+            foreach(Polygon p in Program.CurrentCar.MaterialGroups[GroupIndex].Polygons)
+            {
+                p.Gr = Value;
+            }
+            Console.WriteLine($"Value of \'gr\' has been {(Value == 0 ? "removed from" : $"set to {Value} on")} {Program.CurrentCar.MaterialGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
             Console.WriteLine();
         }
     }

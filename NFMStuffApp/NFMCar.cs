@@ -35,7 +35,7 @@ namespace NFMStuffApp
                     if(line.StartsWith("// <m="))
                     {
                         line = line.Slice("// <m=".Length);
-                        line = line.Slice(0, line.Length - 1);
+                        line = line.Slice(0, line.IndexOf('>'));
                         currentGroup = new MaterialGroup();
                         currentGroup.Name = line.ToString();
                         car.MaterialGroups.Add(currentGroup);
@@ -104,6 +104,13 @@ namespace NFMStuffApp
                     if (currentGroup is null || currentPoly is null) throw new FormatException();
                     int value = int.Parse(line.Slice(3, GetLengthOfNumericCharactersFromIndex(line, 3)));
                     currentPoly.Fs = value;
+                    continue;
+                }
+                if(line.StartsWith("gr("))
+                {
+                    if (currentGroup is null || currentPoly is null) throw new FormatException();
+                    int value = int.Parse(line.Slice(3, GetLengthOfNumericCharactersFromIndex(line, 3)));
+                    currentPoly.Gr = value;
                     continue;
                 }
                 if(line.StartsWith("noOutline"))
@@ -226,7 +233,7 @@ namespace NFMStuffApp
         public bool NoOutline { get; set; }
         public Color Color { get; set; }
         public int? Fs { get; set; }
-
+        public int Gr { get; set; }
         public List<Vertex> Vertices { get; }
         public List<string> Metadata { get; }
 
@@ -245,6 +252,8 @@ namespace NFMStuffApp
             sb.AppendLine(Color.ToString());
             if(Fs.HasValue)
                 sb.Append("fs(").Append(Fs.Value).AppendLine(")");
+            if(Gr != 0)
+                sb.Append("gr(").Append(Gr).AppendLine(")");
             foreach(string metadata in Metadata)
             {
                 sb.AppendLine(metadata);
