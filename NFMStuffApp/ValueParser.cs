@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WSystem.Runtime;
 
-namespace NFMStuffApp
+namespace NFMRadTools
 {
     public static class ValueParser
     {

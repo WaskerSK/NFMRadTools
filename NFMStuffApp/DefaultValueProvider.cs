@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NFMStuffApp
+namespace NFMRadTools
 {
     public static class DefaultValueProvider
     {

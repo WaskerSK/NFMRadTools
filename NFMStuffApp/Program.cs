@@ -4,9 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using WSystem.Runtime;
 
-namespace NFMStuffApp
+namespace NFMRadTools
 {
     public class Program
     {
