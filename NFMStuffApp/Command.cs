@@ -1,0 +1,98 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace NFMStuffApp
+{
+    public class Command
+    {
+        private MethodInfo _method;
+        private ParameterInfo[] _params;
+        public required string Name { get; init; }
+        public required MethodInfo Method 
+        { 
+            get => _method;
+            init
+            {
+                _method = value;
+                if(_method is not null)
+                {
+                    _params = _method.GetParameters();
+                }
+            }
+        }
+        public required bool VerifyCarLoaded { get; init; }
+        public bool HasArgs
+        {
+            get
+            {
+                if (_params is null) return false;
+                return _params.Length > 0;
+            }
+        }
+        public Command()
+        {
+
+        }
+
+        public void Execute(string args)
+        {
+            if(args is null || !HasArgs)
+            {
+                Method.Invoke(null, Array.Empty<object>());
+                return;
+            }
+            int argsLen = _params.Length;
+            string[] stringArgs = args.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            int index = 0;
+            object[] arrArgs = new object[argsLen];
+            foreach(ParameterInfo pi in _params)
+            {
+                if(index >= stringArgs.Length)
+                {
+                    if(pi.IsOptional && pi.HasDefaultValue)
+                    {
+                        arrArgs[index] = pi.DefaultValue;
+                        index++;
+                        continue;
+                    }
+                    Console.WriteLine($"Missing argument for [{pi.ParameterType} {pi.Name}].");
+                    Console.WriteLine();
+                    return;
+                }
+                if (!ValueParser.TryParse(stringArgs[index], pi.ParameterType, out object obj))
+                {
+                    Console.WriteLine($"Failed to parse {pi.Name}.");
+                    Console.WriteLine();
+                    return;
+                }
+                arrArgs[index] = obj;
+                index++;
+            }
+            Method.Invoke(null, arrArgs);
+        }
+
+        public override string ToString()
+        {
+            ParameterInfo[] parameters = Method.GetParameters();
+            if (parameters.Length <= 0) return Name;
+            StringBuilder sb = new StringBuilder();
+            sb.Append(Name);
+            sb.Append(" [");
+            int i = 0;
+            foreach (ParameterInfo param in parameters)
+            {
+                sb.Append(param.ParameterType.Name);
+                sb.Append(" ");
+                sb.Append(param.Name);
+                i++;
+                if(i < parameters.Length) sb.Append(", ");
+            }
+            sb.Append("]");
+            return sb.ToString();
+        }
+    }
+}

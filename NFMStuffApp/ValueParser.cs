@@ -1,0 +1,50 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using WSystem.Runtime;
+
+namespace NFMStuffApp
+{
+    public static class ValueParser
+    {
+        public static bool TryParse(string value, Type type, out object result)
+        {
+            result = null;
+            if (type is null) return false;
+            if(type == typeof(string))
+            {
+                result = value;
+                return true;
+            }
+            if (CLR.ImplementsInterface(type, typeof(IParsable<>)))
+            {
+                try
+                {
+                    Type[] paramTypes = [typeof(string), typeof(IFormatProvider), type.MakeByRefType()];
+                    MethodInfo tryparse = type.GetMethod("TryParse", BindingFlags.Public | BindingFlags.Static, paramTypes);
+                    if(tryparse is null)
+                    {
+                        tryparse = type.GetMethod($"System.IParsable<{type.FullName}>.TryParse", BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic, paramTypes);
+                        if (tryparse is null) return false;
+                    }
+                    object[] args = [value, null, null];
+                    object parseBool = tryparse.Invoke(null, args);
+                    result = args[2];
+                    return (bool)parseBool;
+                }
+                catch
+                {
+                }
+                return false;
+            }
+            if(type.IsEnum)
+            {
+                return Enum.TryParse(type, value, true, out result);
+            }
+            return false;
+        }
+    }
+}
