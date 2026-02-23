@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,8 @@ namespace NFMRadTools
 {
     public class NFMCar
     {
+        public Color? FirstColor { get; set; }
+        public Color? SecondColor { get; set; }
         public List<string> Metadata { get; }
         public List<MaterialGroup> MaterialGroups { get; }
 
@@ -30,18 +33,20 @@ namespace NFMRadTools
                 ReadOnlySpan<char> line = sr.ReadLine();
                 if(line.IsWhiteSpace()) continue;
                 line = line.TrimStart();
+                if(!char.IsAsciiLetter(line[0])) continue;
                 if(line.StartsWith("//"))
                 {
-                    if(line.StartsWith("// <m="))
+                    line = line.Slice(2).TrimStart();
+                    if(line.StartsWith("<m="))
                     {
-                        line = line.Slice("// <m=".Length);
+                        line = line.Slice("<m=".Length);
                         line = line.Slice(0, line.IndexOf('>'));
                         currentGroup = new MaterialGroup();
                         currentGroup.Name = line.ToString();
                         car.MaterialGroups.Add(currentGroup);
                         continue;
                     }
-                    if(line.StartsWith("// </m="))
+                    if(line.StartsWith("</m="))
                     {
                         currentGroup = null;
                         continue;
@@ -119,7 +124,45 @@ namespace NFMRadTools
                     currentPoly.NoOutline = true;
                     continue;
                 }
-                if (!char.IsAsciiLetter(line[0])) continue;
+                if(line.StartsWith("1stColor("))
+                {
+                    line = line.Slice("1stColor(".Length);
+                    Color c = new Color();
+                    ReadOnlySpan<char> r = line.Slice(0, GetLengthOfNumericCharactersFromIndex(line, 2));
+                    int indexOfFirstComma = line.IndexOf(',');
+                    ReadOnlySpan<char> g = line.Slice(indexOfFirstComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFirstComma + 1));
+                    line = line.Slice(indexOfFirstComma + 1);
+                    int indexOfSecondComma = line.IndexOf(',');
+                    ReadOnlySpan<char> b = line.Slice(indexOfSecondComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfSecondComma + 1));
+                    int iR = int.Parse(r);
+                    int iG = int.Parse(g);
+                    int iB = int.Parse(b);
+                    c.R = r.IsWhiteSpace() ? (byte)0 : (iR > byte.MaxValue ? byte.MaxValue : (byte)iR);
+                    c.G = g.IsWhiteSpace() ? (byte)0 : (iG > byte.MaxValue ? byte.MaxValue : (byte)iG);
+                    c.B = b.IsWhiteSpace() ? (byte)0 : (iB > byte.MaxValue ? byte.MaxValue : (byte)iB);
+                    car.FirstColor = c;
+                    continue;
+                }
+                if(line.StartsWith("2ndColor("))
+                {
+                    line = line.Slice("2ndColor(".Length);
+                    Color c = new Color();
+                    ReadOnlySpan<char> r = line.Slice(0, GetLengthOfNumericCharactersFromIndex(line, 2));
+                    int indexOfFirstComma = line.IndexOf(',');
+                    ReadOnlySpan<char> g = line.Slice(indexOfFirstComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFirstComma + 1));
+                    line = line.Slice(indexOfFirstComma + 1);
+                    int indexOfSecondComma = line.IndexOf(',');
+                    ReadOnlySpan<char> b = line.Slice(indexOfSecondComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfSecondComma + 1));
+                    int iR = int.Parse(r);
+                    int iG = int.Parse(g);
+                    int iB = int.Parse(b);
+                    c.R = r.IsWhiteSpace() ? (byte)0 : (iR > byte.MaxValue ? byte.MaxValue : (byte)iR);
+                    c.G = g.IsWhiteSpace() ? (byte)0 : (iG > byte.MaxValue ? byte.MaxValue : (byte)iG);
+                    c.B = b.IsWhiteSpace() ? (byte)0 : (iB > byte.MaxValue ? byte.MaxValue : (byte)iB);
+                    car.SecondColor = c;
+                    continue;
+                }
+                
                 if(currentGroup is null || currentPoly is null)
                 {
                     car.Metadata.Add(line.ToString());
@@ -147,13 +190,21 @@ namespace NFMRadTools
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            foreach(string s in Metadata)
+            if(FirstColor.HasValue)
             {
-                sb.AppendLine(s);
+                sb.Append("1stColor(").Append(FirstColor.Value.ToString()).AppendLine(")");
+            }
+            if(SecondColor.HasValue)
+            {
+                sb.Append("2ndColor(").Append(SecondColor.Value.ToString()).AppendLine(")");
             }
             foreach(MaterialGroup mg in MaterialGroups)
             {
                 sb.AppendLine(mg.ToString());
+            }
+            foreach (string s in Metadata)
+            {
+                sb.AppendLine(s);
             }
             return sb.ToString();
         }
@@ -182,7 +233,7 @@ namespace NFMRadTools
             StringBuilder sb = new StringBuilder();
             if (!string.IsNullOrWhiteSpace(Name))
             {
-                sb.Append("// <m=");
+                sb.Append("//<m=");
                 sb.Append(Name);
                 sb.AppendLine(">");
             }
@@ -194,7 +245,7 @@ namespace NFMRadTools
 
             if (!string.IsNullOrWhiteSpace(Name))
             {
-                sb.Append("// </m=");
+                sb.Append("//</m=");
                 sb.Append(Name);
                 sb.AppendLine(">");
             }
@@ -203,7 +254,7 @@ namespace NFMRadTools
         }
     }
 
-    public struct Color
+    public struct Color : IEquatable<Color>
     {
         public byte R { get; set; }
         public byte G { get; set; }
@@ -219,13 +270,25 @@ namespace NFMRadTools
 
         public override string ToString()
         {
-            return $"c({R},{G},{B})";
-        }
-
-        public string ToStringAlt()
-        {
             return $"{R},{G},{B}";
         }
+
+        public override int GetHashCode()
+        {
+            return R ^ G ^ B;
+        }
+        public override bool Equals(object obj)
+        {
+            if(obj is Color c) return Equals(c);
+            return false;
+        }
+        public bool Equals(Color other)
+        {
+            return R == other.R && G == other.G && B == other.B;
+        }
+
+        public static bool operator==(Color a, Color b) => a.Equals(b);
+        public static bool operator !=(Color a, Color b) => !a.Equals(b);
     }
 
     public class Polygon
@@ -249,7 +312,7 @@ namespace NFMRadTools
             sb.AppendLine("<p>");
             if (NoOutline)
                 sb.AppendLine("noOutline");
-            sb.AppendLine(Color.ToString());
+            sb.Append("c(").Append(Color.ToString()).AppendLine(")");
             if(Fs.HasValue)
                 sb.Append("fs(").Append(Fs.Value).AppendLine(")");
             if(Gr != 0)
