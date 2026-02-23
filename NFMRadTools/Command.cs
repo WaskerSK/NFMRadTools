@@ -59,14 +59,12 @@ namespace NFMRadTools
                         index++;
                         continue;
                     }
-                    Console.WriteLine($"Missing argument for [{pi.ParameterType} {pi.Name}].");
-                    Console.WriteLine();
+                    Logger.Error($"Missing argument for [{pi.ParameterType} {pi.Name}].");
                     return;
                 }
                 if (!ValueParser.TryParse(stringArgs[index], pi.ParameterType, out object obj))
                 {
-                    Console.WriteLine($"Failed to parse {pi.Name}.");
-                    Console.WriteLine();
+                    Logger.Error($"Failed to parse {pi.Name}.");
                     return;
                 }
                 arrArgs[index] = obj;
