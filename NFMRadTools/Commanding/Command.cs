@@ -5,13 +5,14 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NFMRadTools
+namespace NFMRadTools.Commanding
 {
     public class Command
     {
         private MethodInfo _method;
         private ParameterInfo[] _params;
         public required string Name { get; init; }
+        public string Description { get; init; }
         public required MethodInfo Method 
         { 
             get => _method;
@@ -46,12 +47,12 @@ namespace NFMRadTools
                 return;
             }
             int argsLen = _params.Length;
-            string[] stringArgs = args.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            ArgumentEnumerator argEnumerator = new ArgumentEnumerator(args);
             int index = 0;
             object[] arrArgs = new object[argsLen];
             foreach(ParameterInfo pi in _params)
             {
-                if(index >= stringArgs.Length)
+                if(!argEnumerator.MoveNext())
                 {
                     if(pi.IsOptional && pi.HasDefaultValue)
                     {
@@ -59,12 +60,12 @@ namespace NFMRadTools
                         index++;
                         continue;
                     }
-                    Logger.Error($"Missing argument for [{pi.ParameterType} {pi.Name}].");
+                    Logger.Error($"Missing argument for [{TypeNames.GetTypeName(pi.ParameterType)} {pi.Name}].");
                     return;
                 }
-                if (!ValueParser.TryParse(stringArgs[index], pi.ParameterType, out object obj))
+                if (!ValueParser.TryParse(argEnumerator.Current.ToString(), pi.ParameterType, out object obj))
                 {
-                    Logger.Error($"Failed to parse {pi.Name}.");
+                    Logger.Error($"Failed to parse value for [{TypeNames.GetTypeName(pi.ParameterType)} {pi.Name}].");
                     return;
                 }
                 arrArgs[index] = obj;
@@ -83,7 +84,7 @@ namespace NFMRadTools
             int i = 0;
             foreach (ParameterInfo param in parameters)
             {
-                sb.Append(param.ParameterType.Name);
+                sb.Append(TypeNames.GetTypeName(param.ParameterType));
                 sb.Append(" ");
                 sb.Append(param.Name);
                 i++;

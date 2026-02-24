@@ -1,4 +1,6 @@
-﻿using System;
+﻿using NFMRadTools.Commanding;
+using NFMRadTools.Editing;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Xml;
 
 namespace NFMRadTools
 {
@@ -78,11 +81,18 @@ namespace NFMRadTools
                             string cmdName = null;
                             if (string.IsNullOrWhiteSpace(cmdAtt.CommandName)) cmdName = mi.Name;
                             else cmdName = cmdAtt.CommandName;
+                            DescriptionAttribute descriptionAtt = mi.GetCustomAttribute<DescriptionAttribute>();
+                            string description = null;
+                            if(descriptionAtt is not null)
+                            {
+                                description = descriptionAtt.Description;
+                            }
                             Command cmd = new Command()
                             {
                                 Name = cmdName,
                                 Method = mi,
-                                VerifyCarLoaded = cmdAtt.VerifyCarLoaded
+                                VerifyCarLoaded = cmdAtt.VerifyCarLoaded,
+                                Description = description
                             };
                             CommandList.Add(cmdName, cmd);
                         }
@@ -162,5 +172,6 @@ namespace NFMRadTools
             string json = JsonSerializer.Serialize<Config>(Config, new JsonSerializerOptions() { WriteIndented = true });
             File.WriteAllText(configPath, json);
         }
+
     }
 }

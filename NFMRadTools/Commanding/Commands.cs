@@ -1,16 +1,22 @@
-﻿using System;
+﻿using NFMRadTools.Editing;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NFMRadTools
+namespace NFMRadTools.Commanding
 {
     [Command]
     public static class Commands
     {
         [Command(CommandName = "game.setcarfolder")]
+        [Description("""
+            Sets the folder from which to load and save cars.
+            =Inputs=
+            string Folder - The car folder path.
+            """)]
         public static void SetCarFolder(string Folder)
         {
             if (!Directory.Exists(Folder))
@@ -20,8 +26,20 @@ namespace NFMRadTools
             }
             Program.Config.CarDirectory = Folder;
             Logger.Info($"Car directory was set to: \"{Folder}\".");
+            string configPath = $"{Environment.CurrentDirectory}\\Config.json";
+            try
+            {
+                Program.Config.Save(configPath);
+            }
+            catch(Exception e)
+            {
+                Logger.Warning("Failed to save config.");
+                Logger.Error(e.ToString());
+            }
         }
+
         [Command(CommandName = "game.carfolder")]
+        [Description("Prints the current car folder from which cars are loaded and saved to.")]
         public static void PrintCarFolder()
         {
             if (string.IsNullOrWhiteSpace(Program.CarDirectory))
@@ -29,24 +47,82 @@ namespace NFMRadTools
             else
                 Logger.Info(Program.CarDirectory);
         }
+
         [Command(CommandName = "help")]
-        public static void Help()
+        [Description("""
+            Lits all the available commands.
+            =Inputs=
+            int Page (optional) - The page number to display.
+            """)]
+        public static void Help(int Page = 1)
         {
+            int commandsPerPage = 20;
+            int commandCount = Program.CommandList.Count;
+            double dPages = (double)commandCount / commandsPerPage;
+            int pages = (int)double.Ceiling(dPages);
+            if(Page < 1 || Page > pages)
+            {
+                Logger.Error($"Invalid page number: {Page}.");
+            }
             Logger.Info("List of commands:");
+            string pageMsg = $"[Page {Page}/{pages}]";
+            Logger.Log(pageMsg, ConsoleColor.White);
+            Page -= 1;
             StringBuilder sb = new StringBuilder();
-            foreach (var cmdTuple in Program.CommandList)
+            foreach (var cmdTuple in Program.CommandList.Skip(Page * commandsPerPage).Take(commandsPerPage))
             {
                 sb.AppendLine(cmdTuple.Value.ToString());
             }
+            if (sb[sb.Length-1] == '\n')
+            {
+                sb.Remove(sb.Length - 1, 1);
+            }
             Logger.Log(sb.ToString(), ConsoleColor.Cyan);
+            Logger.Log(pageMsg, ConsoleColor.White);
+            Logger.Info("Type help <PageNumber> to view other pages.");
         }
+
+        [Command(CommandName = "help.command")]
+        [Description("""
+            Shows help for a specific command.
+            =Inputs=
+            string Command (optional) - The command to show help for. If not provided shows help for itself.
+            """)]
+        public static void CommandHelp(string Command = "help.command")
+        {
+            if(string.IsNullOrWhiteSpace(Command))
+            {
+                Logger.Error("Missing command name.");
+                return;
+            }
+            if(!Program.CommandList.TryGetValue(Command, out Command cmd))
+            {
+                Logger.Error($"Command \"{Command}\" was not found.");
+                return;
+            }
+            if(string.IsNullOrWhiteSpace(cmd.Description))
+            {
+                Logger.Warning($"The command \"{Command}\" has no description.");
+                return;
+            }
+            Logger.Info($"Description of command \"{Command}\":");
+            Logger.Log(cmd.Description, ConsoleColor.Cyan);
+        }
+
         [Command(CommandName = "exit")]
+        [Description("Exits the application.")]
         public static void Exit()
         {
             Logger.Info("Exiting.");
             throw new ExitException();
         }
+
         [Command(CommandName = "load")]
+        [Description("""
+            Loads a car from the current car folder.
+            =Inputs=
+            string CarName - The name of the car to load. Note: Do not include a file extension.
+            """)]
         public static void LoadCar(string CarName)
         {
             if (string.IsNullOrWhiteSpace(CarName))
@@ -77,12 +153,19 @@ namespace NFMRadTools
         }
 
         [Command(CommandName = "print", VerifyCarLoaded = true)]
+        [Description("Prints the code of the currently loaded car.")]
         public static void PrintCar()
         {
             Logger.Info("Car code:");
             Logger.Log(Program.CurrentCar.ToString(), ConsoleColor.White);
         }
+
         [Command(CommandName = "save", VerifyCarLoaded = true)]
+        [Description("""
+            Saves the currently loaded car into the current car folder.
+            =Inputs=
+            string CarName - The name of the car file name. Note: Do not include a file extension.
+            """)]
         public static void Save(string CarName)
         {
             if (string.IsNullOrWhiteSpace(CarName))
@@ -101,6 +184,7 @@ namespace NFMRadTools
         }
 
         [Command(CommandName = "car.groups.list", VerifyCarLoaded = true)]
+        [Description("Lists all the material groups in the currently loaded car, displaying indexes and polycounts of the groups.")]
         public static void ListMaterialGroups()
         {
             Logger.Log("Material groups:", ConsoleColor.Green);
@@ -122,16 +206,35 @@ namespace NFMRadTools
         }
 
         [Command(CommandName = "car.groups.new", VerifyCarLoaded = true)]
+        [Description("""
+            Creates a new material group.
+            =Inputs=
+            string Name (optional) - The name of the new material group. If not provided, a random name is generated.
+            """)]
         public static void CreateNewMaterialGroup(string Name = null)
         {
+            if(string.IsNullOrWhiteSpace(Name))
+            {
+                Logger.Warning("Invalid name provided. Generating random name.");
+                Name = MaterialGroup.GetRandomGroupName();
+            }
             MaterialGroup mg = new MaterialGroup();
-            if (string.IsNullOrWhiteSpace(Name)) Name = null;
             mg.Name = Name;
             Program.CurrentCar.MaterialGroups.Add(mg);
-            Logger.Info($"New group created: [{Program.CurrentCar.MaterialGroups.Count - 1}]");
+            Logger.Info($"New group created: [{Program.CurrentCar.MaterialGroups.Count - 1}] - {mg.Name}");
         }
 
         [Command(CommandName = "car.groups.movepoly", VerifyCarLoaded = true)]
+        [Description("""
+            Moves polygons from one material group to another.
+            =Inputs=
+            int SourceGroupIndex - Zero based index of the material group from which the polygons are being moved.
+            int TargetGroupIndex - Zero based index of the material group to which the polygons are being moved.
+            int PolyStartIndex - Zero based index of the first polygon to take.
+            int PolyCount - Number of polygons to move.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes and polycounts. 
+            """)]
         public static void MovePolygonsToGroup(int SourceGroupIndex, int TargetGroupIndex, int PolyStartIndex, int PolyCount)
         {
             MaterialGroup source = Program.CurrentCar.MaterialGroups[SourceGroupIndex];
@@ -142,6 +245,16 @@ namespace NFMRadTools
         }
 
         [Command(CommandName = "car.groups.setcolor", VerifyCarLoaded = true)]
+        [Description("""
+            Sets the color of all polygons in the given material group.
+            =Inputs=
+            int GroupIndex - Zero based index of the material group to which to apply the color.
+            byte R - The red channel color value.
+            byte G - The green channel color value.
+            byte B - The blue channel color value.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            """)]
         public static void SetGroupColor(int GroupIndex, byte R, byte G, byte B)
         {
             Color c = new Color();
@@ -153,6 +266,7 @@ namespace NFMRadTools
         }
 
         [Command(CommandName = "car.groups.removeempty", VerifyCarLoaded = true)]
+        [Description("Removes material groups containing 0 polygons.")]
         public static void RemoveEmptyGroups()
         {
             int countRemoved = 0;
@@ -168,6 +282,14 @@ namespace NFMRadTools
         }
 
         [Command(CommandName = "car.groups.setfs", VerifyCarLoaded = true)]
+        [Description("""
+            Sets the fs(x) value for all polygons within a material group.
+            =Inputs=
+            int GroupIndex - Zero based index of the group to which to apply the value.
+            int FsValue - The x value of fs(x).
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            """)]
         public static void SetGroupFs(int GroupIndex, int FsValue)
         {
             foreach (Polygon p in Program.CurrentCar.MaterialGroups[GroupIndex].Polygons)
@@ -178,6 +300,11 @@ namespace NFMRadTools
         }
 
         [Command(CommandName = "car.setfs", VerifyCarLoaded = true)]
+        [Description("""
+            Sets the fs(x) value for all polygons of the car.
+            =Inputs=
+            int FsValue - The x value of fs(x).
+            """)]
         public static void SetCarFs(int FsValue)
         {
             int polycount = 0;
@@ -193,6 +320,13 @@ namespace NFMRadTools
         }
 
         [Command(CommandName = "car.groups.removefs", VerifyCarLoaded = true)]
+        [Description("""
+            Removes the fs(x) value from all polygons within a material group.
+            =Inputs=
+            int GroupIndex - Zero based index of the group from which to remove the value.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            """)]
         public static void RemoveGroupFs(int GroupIndex)
         {
             foreach (Polygon p in Program.CurrentCar.MaterialGroups[GroupIndex].Polygons)
@@ -203,6 +337,7 @@ namespace NFMRadTools
         }
 
         [Command(CommandName = "car.removefs", VerifyCarLoaded = true)]
+        [Description("Removes the fs(x) value from all polygons of the car.")]
         public static void RemoveCarFs()
         {
             int polycount = 0;
@@ -218,6 +353,13 @@ namespace NFMRadTools
         }
 
         [Command(CommandName = "car.setoutline", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds noOutline attribute to all polygons of the car.
+            =Inputs=
+            bool Value - The bool value that indicates wether the car will have outlines.
+            =Remarks=
+            Use true if u want outline, otherwise false for no outline.
+            """)]
         public static void SetCarOutline(bool Value)
         {
             int polycount = 0;
@@ -226,23 +368,41 @@ namespace NFMRadTools
                 polycount += mg.Polygons.Count;
                 foreach (Polygon p in mg.Polygons)
                 {
-                    p.NoOutline = Value;
+                    p.NoOutline = !Value;
                 }
             }
-            Logger.Info($"Value of \'noOutline\' has been {(Value ? "added to" : "removed from")} {polycount} - Polygons across {Program.CurrentCar.MaterialGroups.Count} groups.");
+            Logger.Info($"Value of \'noOutline\' has been {(!Value ? "added to" : "removed from")} {polycount} - Polygons across {Program.CurrentCar.MaterialGroups.Count} groups.");
         }
 
         [Command(CommandName = "car.groups.setoutline", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds noOutline attribute to all polygons within the given material group.
+            =Input=
+            int GroupIndex - Zero based index of the group.
+            bool Value - The bool value that indicates wether the car will have outlines.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use true if u want outline, otherwise false for no outline.
+            """)]
         public static void SetGroupOutline(int GroupIndex, bool Value)
         {
             foreach (Polygon p in Program.CurrentCar.MaterialGroups[GroupIndex].Polygons)
             {
-                p.NoOutline = Value;
+                p.NoOutline = !Value;
             }
-            Logger.Info($"Value of \'noOutline\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.MaterialGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            Logger.Info($"Value of \'noOutline\' has been {(!Value ? "added to" : "removed from")} {Program.CurrentCar.MaterialGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
         }
 
         [Command(CommandName = "car.groups.setgr", VerifyCarLoaded = true)]
+        [Description("""
+            Sets or removes the gr(x) value from a material group.
+            =Inputs=
+            int GroupIndex = Zero based index of the group.
+            int Value - The x value of the gr(x).
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use value of 0 to remove gr(x) attribute.
+            """)]
         public static void SetGroupGr(int GroupIndex, int Value)
         {
             foreach (Polygon p in Program.CurrentCar.MaterialGroups[GroupIndex].Polygons)
@@ -251,7 +411,15 @@ namespace NFMRadTools
             }
             Logger.Info($"Value of \'gr\' has been {(Value == 0 ? "removed from" : $"set to {Value} on")} {Program.CurrentCar.MaterialGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
         }
+
         [Command(CommandName = "car.colors.get", VerifyCarLoaded = true)]
+        [Description("""
+            Prints the given car color.
+            =Inputs=
+            int CarColorNumber - The number of color which to print.
+            =Remarks=
+            Use value of 1 or 2 to print 1st color or 2nd color.
+            """)]
         public static void GetCarColor(int CarColorNumber)
         {
             if(CarColorNumber < 1 ||  CarColorNumber > 2)
@@ -281,7 +449,18 @@ namespace NFMRadTools
                 return;
             }
         }
+
         [Command(CommandName = "car.colors.set", VerifyCarLoaded = true)]
+        [Description("""
+            Sets the color of the given dynamic car color.
+            =Inputs=
+            int CarColorNumber = The number of color which to change.
+            byte R - The red channel color value.
+            byte G - The green channel color value.
+            byte B - The blue channel color value.
+            =Remarks=
+            Use value of 1 or 2 to change 1st color or 2nd color.
+            """)]
         public static void SetCarColor(int CarColorNumber, byte R, byte G, byte B)
         {
             if (CarColorNumber < 1 || CarColorNumber > 2)
@@ -303,7 +482,9 @@ namespace NFMRadTools
                 return;
             }
         }
+
         [Command(CommandName = "car.colors.auto", VerifyCarLoaded = true)]
+        [Description("Scans the colors of all polygons and sets 1st and 2nd color based on the 2 most common colors.")]
         public static void AutoSetCarColors()
         {
             Logger.Info("Calculating colors.");
@@ -348,5 +529,6 @@ namespace NFMRadTools
             Program.CurrentCar.SecondColor = c2;
             Logger.Info($"First color was set to ({c1}) - {c1Count} polygons, Second color was set to ({c2}) - {c2Count} polygons.");
         }
+        //public static void ImportObj()
     }
 }

@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NFMRadTools
+namespace NFMRadTools.Commanding
 {
     public static class ValueParser
     {

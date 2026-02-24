@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NFMRadTools
+namespace NFMRadTools.Editing
 {
     public class NFMCar
     {
@@ -42,7 +42,14 @@ namespace NFMRadTools
                         line = line.Slice("<m=".Length);
                         line = line.Slice(0, line.IndexOf('>'));
                         currentGroup = new MaterialGroup();
-                        currentGroup.Name = line.ToString();
+                        if(line.IsEmpty || line.IsWhiteSpace())
+                        {
+                            currentGroup.Name = MaterialGroup.GetRandomGroupName();
+                        }
+                        else
+                        {
+                            currentGroup.Name = line.ToString();
+                        }
                         car.MaterialGroups.Add(currentGroup);
                         continue;
                     }
@@ -82,9 +89,9 @@ namespace NFMRadTools
                     int iR = int.Parse(r);
                     int iG = int.Parse(g);
                     int iB = int.Parse(b);
-                    c.R = r.IsWhiteSpace() ? (byte)0 : (iR > byte.MaxValue ? byte.MaxValue : (byte)iR);
-                    c.G = g.IsWhiteSpace() ? (byte)0 : (iG > byte.MaxValue ? byte.MaxValue : (byte)iG);
-                    c.B = b.IsWhiteSpace() ? (byte)0 : (iB > byte.MaxValue ? byte.MaxValue : (byte)iB);
+                    c.R = r.IsWhiteSpace() ? (byte)0 : iR > byte.MaxValue ? byte.MaxValue : (byte)iR;
+                    c.G = g.IsWhiteSpace() ? (byte)0 : iG > byte.MaxValue ? byte.MaxValue : (byte)iG;
+                    c.B = b.IsWhiteSpace() ? (byte)0 : iB > byte.MaxValue ? byte.MaxValue : (byte)iB;
                     currentPoly.Color = c;
                     continue;
                 }
@@ -137,9 +144,9 @@ namespace NFMRadTools
                     int iR = int.Parse(r);
                     int iG = int.Parse(g);
                     int iB = int.Parse(b);
-                    c.R = r.IsWhiteSpace() ? (byte)0 : (iR > byte.MaxValue ? byte.MaxValue : (byte)iR);
-                    c.G = g.IsWhiteSpace() ? (byte)0 : (iG > byte.MaxValue ? byte.MaxValue : (byte)iG);
-                    c.B = b.IsWhiteSpace() ? (byte)0 : (iB > byte.MaxValue ? byte.MaxValue : (byte)iB);
+                    c.R = r.IsWhiteSpace() ? (byte)0 : iR > byte.MaxValue ? byte.MaxValue : (byte)iR;
+                    c.G = g.IsWhiteSpace() ? (byte)0 : iG > byte.MaxValue ? byte.MaxValue : (byte)iG;
+                    c.B = b.IsWhiteSpace() ? (byte)0 : iB > byte.MaxValue ? byte.MaxValue : (byte)iB;
                     car.FirstColor = c;
                     continue;
                 }
@@ -156,9 +163,9 @@ namespace NFMRadTools
                     int iR = int.Parse(r);
                     int iG = int.Parse(g);
                     int iB = int.Parse(b);
-                    c.R = r.IsWhiteSpace() ? (byte)0 : (iR > byte.MaxValue ? byte.MaxValue : (byte)iR);
-                    c.G = g.IsWhiteSpace() ? (byte)0 : (iG > byte.MaxValue ? byte.MaxValue : (byte)iG);
-                    c.B = b.IsWhiteSpace() ? (byte)0 : (iB > byte.MaxValue ? byte.MaxValue : (byte)iB);
+                    c.R = r.IsWhiteSpace() ? (byte)0 : iR > byte.MaxValue ? byte.MaxValue : (byte)iR;
+                    c.G = g.IsWhiteSpace() ? (byte)0 : iG > byte.MaxValue ? byte.MaxValue : (byte)iG;
+                    c.B = b.IsWhiteSpace() ? (byte)0 : iB > byte.MaxValue ? byte.MaxValue : (byte)iB;
                     car.SecondColor = c;
                     continue;
                 }
@@ -207,140 +214,6 @@ namespace NFMRadTools
                 sb.AppendLine(s);
             }
             return sb.ToString();
-        }
-    }
-
-    public class MaterialGroup
-    {
-        public string Name { get; set; }
-        public List<Polygon> Polygons { get; }
-
-        public MaterialGroup()
-        {
-            Polygons = new List<Polygon>();
-        }
-
-        public void SetColor(Color color)
-        {
-            foreach(Polygon p in Polygons)
-            {
-                p.Color = color;
-            }
-        }
-
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-            if (!string.IsNullOrWhiteSpace(Name))
-            {
-                sb.Append("//<m=");
-                sb.Append(Name);
-                sb.AppendLine(">");
-            }
-
-            foreach(Polygon poly in Polygons)
-            {
-                sb.AppendLine(poly.ToString());
-            }
-
-            if (!string.IsNullOrWhiteSpace(Name))
-            {
-                sb.Append("//</m=");
-                sb.Append(Name);
-                sb.AppendLine(">");
-            }
-
-            return sb.ToString();
-        }
-    }
-
-    public struct Color : IEquatable<Color>
-    {
-        public byte R { get; set; }
-        public byte G { get; set; }
-        public byte B { get; set; }
-
-        public Color() { }
-        public Color(byte r, byte g, byte b)
-        {
-            R = r;
-            G = g;
-            B = b;
-        }
-
-        public override string ToString()
-        {
-            return $"{R},{G},{B}";
-        }
-
-        public override int GetHashCode()
-        {
-            return R ^ G ^ B;
-        }
-        public override bool Equals(object obj)
-        {
-            if(obj is Color c) return Equals(c);
-            return false;
-        }
-        public bool Equals(Color other)
-        {
-            return R == other.R && G == other.G && B == other.B;
-        }
-
-        public static bool operator==(Color a, Color b) => a.Equals(b);
-        public static bool operator !=(Color a, Color b) => !a.Equals(b);
-    }
-
-    public class Polygon
-    {
-        public bool NoOutline { get; set; }
-        public Color Color { get; set; }
-        public int? Fs { get; set; }
-        public int Gr { get; set; }
-        public List<Vertex> Vertices { get; }
-        public List<string> Metadata { get; }
-
-        public Polygon()
-        {
-            Vertices = new List<Vertex>();
-            Metadata = new List<string>();
-        }
-
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("<p>");
-            if (NoOutline)
-                sb.AppendLine("noOutline");
-            sb.Append("c(").Append(Color.ToString()).AppendLine(")");
-            if(Fs.HasValue)
-                sb.Append("fs(").Append(Fs.Value).AppendLine(")");
-            if(Gr != 0)
-                sb.Append("gr(").Append(Gr).AppendLine(")");
-            foreach(string metadata in Metadata)
-            {
-                sb.AppendLine(metadata);
-            }
-            sb.AppendLine();
-            foreach(Vertex v in Vertices)
-            {
-                sb.AppendLine(v.ToString());
-            }
-            sb.AppendLine("</p>");
-            sb.AppendLine();
-            return sb.ToString();
-        }
-    }
-
-    public struct Vertex
-    {
-        public int X { get; set; }
-        public int Y { get; set; }
-        public int Z { get; set; }
-
-        public override string ToString()
-        {
-            return $"p({X},{Y},{Z})";
         }
     }
 }
