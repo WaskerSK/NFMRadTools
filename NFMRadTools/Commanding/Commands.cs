@@ -1,6 +1,7 @@
 ﻿using NFMRadTools.Editing;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -122,6 +123,9 @@ namespace NFMRadTools.Commanding
             Loads a car from the current car folder.
             =Inputs=
             string CarName - The name of the car to load. Note: Do not include a file extension.
+            =Remarks=
+            You can puth full path to a car file as the car name if u wanna load from external folder.
+            Note: if using full path to car file you need to include an extension.
             """)]
         public static void LoadCar(string CarName)
         {
@@ -130,7 +134,11 @@ namespace NFMRadTools.Commanding
                 Logger.Error("Invalid car file name.");
                 return;
             }
-            string filePath = $"{Program.CarDirectory}\\{CarName}{Program.NFMCarExtension}";
+            string filePath = null;
+            if (!File.Exists(CarName))
+                filePath = $"{Program.CarDirectory}\\{CarName}{Program.NFMCarExtension}";
+            else
+                filePath = CarName;
             string carData = null;
             try
             {
@@ -184,52 +192,56 @@ namespace NFMRadTools.Commanding
         }
 
         [Command(CommandName = "car.groups.list", VerifyCarLoaded = true)]
-        [Description("Lists all the material groups in the currently loaded car, displaying indexes and polycounts of the groups.")]
-        public static void ListMaterialGroups()
+        [Description("Lists all the poly groups in the currently loaded car, displaying indexes and polycounts of the groups.")]
+        public static void ListPolyGroups()
         {
-            Logger.Log("Material groups:", ConsoleColor.Green);
-            for (int i = 0; i < Program.CurrentCar.MaterialGroups.Count; i++)
+            Logger.Log("Poly groups:", ConsoleColor.Green);
+            for (int i = 0; i < Program.CurrentCar.PolyGroups.Count; i++)
             {
                 Console.Write("[");
                 Console.Write(i);
                 Console.Write("] - ");
-                if (Program.CurrentCar.MaterialGroups[i].Name is null)
+                /*if (Program.CurrentCar.PolyGroups[i].Name is null)
                 {
                     Console.Write("Group_");
                     Console.Write(i + 1);
-                }
-                else Console.Write(Program.CurrentCar.MaterialGroups[i].Name);
+                }*/
+                //else Console.Write(Program.CurrentCar.PolyGroups[i].Name);
+                Console.Write(Program.CurrentCar.PolyGroups[i].Name);
                 Console.Write(" - (");
-                Console.Write(Program.CurrentCar.MaterialGroups[i].Polygons.Count);
-                Console.WriteLine(" Polygons)");
+                Console.Write(Program.CurrentCar.PolyGroups[i].Polygons.Count);
+                Console.Write(" Polygons) | Mode: ");
+                Console.WriteLine(Program.CurrentCar.PolyGroups[i].Mode);
             }
         }
 
         [Command(CommandName = "car.groups.new", VerifyCarLoaded = true)]
         [Description("""
-            Creates a new material group.
+            Creates a new poly group.
             =Inputs=
-            string Name (optional) - The name of the new material group. If not provided, a random name is generated.
+            string Name (optional) - The name of the new poly group. If not provided, a random name is generated.
+            PolyGroupMode Mode (optional) - The mode of the poly group that dictates wether the polygons represent a car body or a custom wheel.
             """)]
-        public static void CreateNewMaterialGroup(string Name = null)
+        public static void CreateNewPolyGroup(string Name = null, PolyGroupMode Mode = PolyGroupMode.Normal)
         {
             if(string.IsNullOrWhiteSpace(Name))
             {
                 Logger.Warning("Invalid name provided. Generating random name.");
-                Name = MaterialGroup.GetRandomGroupName();
+                Name = PolyGroup.GetRandomGroupName();
             }
-            MaterialGroup mg = new MaterialGroup();
-            mg.Name = Name;
-            Program.CurrentCar.MaterialGroups.Add(mg);
-            Logger.Info($"New group created: [{Program.CurrentCar.MaterialGroups.Count - 1}] - {mg.Name}");
+            PolyGroup g = new PolyGroup();
+            g.Name = Name;
+            g.Mode = Mode;
+            Program.CurrentCar.PolyGroups.Add(g);
+            Logger.Info($"New group created: [{Program.CurrentCar.PolyGroups.Count - 1}] - {g.Name} - Mode: {Mode}");
         }
 
         [Command(CommandName = "car.groups.movepoly", VerifyCarLoaded = true)]
         [Description("""
-            Moves polygons from one material group to another.
+            Moves polygons from one poly group to another.
             =Inputs=
-            int SourceGroupIndex - Zero based index of the material group from which the polygons are being moved.
-            int TargetGroupIndex - Zero based index of the material group to which the polygons are being moved.
+            int SourceGroupIndex - Zero based index of the poly group from which the polygons are being moved.
+            int TargetGroupIndex - Zero based index of the poly group to which the polygons are being moved.
             int PolyStartIndex - Zero based index of the first polygon to take.
             int PolyCount - Number of polygons to move.
             =Remarks=
@@ -237,18 +249,18 @@ namespace NFMRadTools.Commanding
             """)]
         public static void MovePolygonsToGroup(int SourceGroupIndex, int TargetGroupIndex, int PolyStartIndex, int PolyCount)
         {
-            MaterialGroup source = Program.CurrentCar.MaterialGroups[SourceGroupIndex];
-            MaterialGroup target = Program.CurrentCar.MaterialGroups[TargetGroupIndex];
-            target.Polygons.AddRange(source.Polygons.Take(new Range(PolyStartIndex, PolyStartIndex + PolyCount)));
-            source.Polygons.RemoveRange(PolyStartIndex, PolyCount);
+            PolyGroup source = Program.CurrentCar.PolyGroups[SourceGroupIndex];
+            PolyGroup target = Program.CurrentCar.PolyGroups[TargetGroupIndex];
+            target.AddPolygons(source.Polygons.Take(new Range(PolyStartIndex, PolyStartIndex + PolyCount)));
+            source.RemoveRange(PolyStartIndex, PolyCount);
             Logger.Info($"{PolyCount} polygons moved from group [{SourceGroupIndex}] to group [{TargetGroupIndex}].");
         }
 
         [Command(CommandName = "car.groups.setcolor", VerifyCarLoaded = true)]
         [Description("""
-            Sets the color of all polygons in the given material group.
+            Sets the color of all polygons in the given poly group.
             =Inputs=
-            int GroupIndex - Zero based index of the material group to which to apply the color.
+            int GroupIndex - Zero based index of the poly group to which to apply the color.
             byte R - The red channel color value.
             byte G - The green channel color value.
             byte B - The blue channel color value.
@@ -261,20 +273,20 @@ namespace NFMRadTools.Commanding
             c.R = R;
             c.G = G;
             c.B = B;
-            Program.CurrentCar.MaterialGroups[GroupIndex].SetColor(c);
+            Program.CurrentCar.PolyGroups[GroupIndex].SetColor(c);
             Logger.Info($"Color of group [{GroupIndex}] was changed to {c.ToString()}.");
         }
 
         [Command(CommandName = "car.groups.removeempty", VerifyCarLoaded = true)]
-        [Description("Removes material groups containing 0 polygons.")]
+        [Description("Removes poly groups containing 0 polygons.")]
         public static void RemoveEmptyGroups()
         {
             int countRemoved = 0;
-            for (int i = Program.CurrentCar.MaterialGroups.Count - 1; i >= 0; i--)
+            for (int i = Program.CurrentCar.PolyGroups.Count - 1; i >= 0; i--)
             {
-                if (Program.CurrentCar.MaterialGroups[i].Polygons.Count <= 0)
+                if (Program.CurrentCar.PolyGroups[i].Polygons.Count <= 0)
                 {
-                    Program.CurrentCar.MaterialGroups.RemoveAt(i);
+                    Program.CurrentCar.PolyGroups.RemoveAt(i);
                     countRemoved++;
                 }
             }
@@ -283,7 +295,7 @@ namespace NFMRadTools.Commanding
 
         [Command(CommandName = "car.groups.setfs", VerifyCarLoaded = true)]
         [Description("""
-            Sets the fs(x) value for all polygons within a material group.
+            Sets the fs(x) value for all polygons within a poly group.
             =Inputs=
             int GroupIndex - Zero based index of the group to which to apply the value.
             int FsValue - The x value of fs(x).
@@ -292,11 +304,11 @@ namespace NFMRadTools.Commanding
             """)]
         public static void SetGroupFs(int GroupIndex, int FsValue)
         {
-            foreach (Polygon p in Program.CurrentCar.MaterialGroups[GroupIndex].Polygons)
+            foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
             {
                 p.Fs = FsValue;
             }
-            Logger.Info($"Value of \'fs\' has been set to {FsValue} for {Program.CurrentCar.MaterialGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}].");
+            Logger.Info($"Value of \'fs\' has been set to {FsValue} for {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}].");
         }
 
         [Command(CommandName = "car.setfs", VerifyCarLoaded = true)]
@@ -308,7 +320,7 @@ namespace NFMRadTools.Commanding
         public static void SetCarFs(int FsValue)
         {
             int polycount = 0;
-            foreach (MaterialGroup mg in Program.CurrentCar.MaterialGroups)
+            foreach (PolyGroup mg in Program.CurrentCar.PolyGroups)
             {
                 polycount += mg.Polygons.Count;
                 foreach (Polygon p in mg.Polygons)
@@ -316,12 +328,12 @@ namespace NFMRadTools.Commanding
                     p.Fs = FsValue;
                 }
             }
-            Logger.Info($"Value of \'fs\' has been set to {FsValue} for {polycount} - Polygons across {Program.CurrentCar.MaterialGroups.Count} groups.");
+            Logger.Info($"Value of \'fs\' has been set to {FsValue} for {polycount} - Polygons across {Program.CurrentCar.PolyGroups.Count} groups.");
         }
 
         [Command(CommandName = "car.groups.removefs", VerifyCarLoaded = true)]
         [Description("""
-            Removes the fs(x) value from all polygons within a material group.
+            Removes the fs(x) value from all polygons within a poly group.
             =Inputs=
             int GroupIndex - Zero based index of the group from which to remove the value.
             =Remarks=
@@ -329,11 +341,11 @@ namespace NFMRadTools.Commanding
             """)]
         public static void RemoveGroupFs(int GroupIndex)
         {
-            foreach (Polygon p in Program.CurrentCar.MaterialGroups[GroupIndex].Polygons)
+            foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
             {
                 p.Fs = null;
             }
-            Logger.Info($"Value of \'fs\' has been removed to from {Program.CurrentCar.MaterialGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}].");
+            Logger.Info($"Value of \'fs\' has been removed to from {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}].");
         }
 
         [Command(CommandName = "car.removefs", VerifyCarLoaded = true)]
@@ -341,7 +353,7 @@ namespace NFMRadTools.Commanding
         public static void RemoveCarFs()
         {
             int polycount = 0;
-            foreach (MaterialGroup mg in Program.CurrentCar.MaterialGroups)
+            foreach (PolyGroup mg in Program.CurrentCar.PolyGroups)
             {
                 polycount += mg.Polygons.Count;
                 foreach (Polygon p in mg.Polygons)
@@ -349,7 +361,7 @@ namespace NFMRadTools.Commanding
                     p.Fs = null;
                 }
             }
-            Logger.Info($"Value of \'fs\' has been removed from {polycount} - Polygons across {Program.CurrentCar.MaterialGroups.Count} groups.");
+            Logger.Info($"Value of \'fs\' has been removed from {polycount} - Polygons across {Program.CurrentCar.PolyGroups.Count} groups.");
         }
 
         [Command(CommandName = "car.setoutline", VerifyCarLoaded = true)]
@@ -363,7 +375,7 @@ namespace NFMRadTools.Commanding
         public static void SetCarOutline(bool Value)
         {
             int polycount = 0;
-            foreach (MaterialGroup mg in Program.CurrentCar.MaterialGroups)
+            foreach (PolyGroup mg in Program.CurrentCar.PolyGroups)
             {
                 polycount += mg.Polygons.Count;
                 foreach (Polygon p in mg.Polygons)
@@ -371,12 +383,12 @@ namespace NFMRadTools.Commanding
                     p.NoOutline = !Value;
                 }
             }
-            Logger.Info($"Value of \'noOutline\' has been {(!Value ? "added to" : "removed from")} {polycount} - Polygons across {Program.CurrentCar.MaterialGroups.Count} groups.");
+            Logger.Info($"Value of \'noOutline\' has been {(!Value ? "added to" : "removed from")} {polycount} - Polygons across {Program.CurrentCar.PolyGroups.Count} groups.");
         }
 
         [Command(CommandName = "car.groups.setoutline", VerifyCarLoaded = true)]
         [Description("""
-            Removes or adds noOutline attribute to all polygons within the given material group.
+            Removes or adds noOutline attribute to all polygons within the given poly group.
             =Input=
             int GroupIndex - Zero based index of the group.
             bool Value - The bool value that indicates wether the car will have outlines.
@@ -386,16 +398,16 @@ namespace NFMRadTools.Commanding
             """)]
         public static void SetGroupOutline(int GroupIndex, bool Value)
         {
-            foreach (Polygon p in Program.CurrentCar.MaterialGroups[GroupIndex].Polygons)
+            foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
             {
                 p.NoOutline = !Value;
             }
-            Logger.Info($"Value of \'noOutline\' has been {(!Value ? "added to" : "removed from")} {Program.CurrentCar.MaterialGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            Logger.Info($"Value of \'noOutline\' has been {(!Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
         }
 
         [Command(CommandName = "car.groups.setgr", VerifyCarLoaded = true)]
         [Description("""
-            Sets or removes the gr(x) value from a material group.
+            Sets or removes the gr(x) value from a poly group.
             =Inputs=
             int GroupIndex = Zero based index of the group.
             int Value - The x value of the gr(x).
@@ -405,11 +417,11 @@ namespace NFMRadTools.Commanding
             """)]
         public static void SetGroupGr(int GroupIndex, int Value)
         {
-            foreach (Polygon p in Program.CurrentCar.MaterialGroups[GroupIndex].Polygons)
+            foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
             {
                 p.Gr = Value;
             }
-            Logger.Info($"Value of \'gr\' has been {(Value == 0 ? "removed from" : $"set to {Value} on")} {Program.CurrentCar.MaterialGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            Logger.Info($"Value of \'gr\' has been {(Value == 0 ? "removed from" : $"set to {Value} on")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
         }
 
         [Command(CommandName = "car.colors.get", VerifyCarLoaded = true)]
@@ -489,7 +501,7 @@ namespace NFMRadTools.Commanding
         {
             Logger.Info("Calculating colors.");
             Dictionary<Color, int> d = new Dictionary<Color, int>();
-            foreach(MaterialGroup mg in Program.CurrentCar.MaterialGroups)
+            foreach(PolyGroup mg in Program.CurrentCar.PolyGroups)
             {
                 foreach(Polygon p in mg.Polygons)
                 {
@@ -529,6 +541,9 @@ namespace NFMRadTools.Commanding
             Program.CurrentCar.SecondColor = c2;
             Logger.Info($"First color was set to ({c1}) - {c1Count} polygons, Second color was set to ({c2}) - {c2Count} polygons.");
         }
-        //public static void ImportObj()
+        public static void ImportObj()
+        {
+
+        }
     }
 }

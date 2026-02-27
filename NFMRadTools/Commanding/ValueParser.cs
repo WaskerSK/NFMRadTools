@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NFMRadTools.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -42,7 +43,7 @@ namespace NFMRadTools.Commanding
             }
             if(type.IsEnum)
             {
-                return Enum.TryParse(type, value, true, out result);
+                return AlternativeEnumParser.TryParse(type, value, true, out result);
             }
             return false;
         }

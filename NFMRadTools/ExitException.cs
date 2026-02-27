@@ -8,6 +8,14 @@ namespace NFMRadTools
 {
     public class ExitException : Exception
     {
-        public ExitException() { }
+        public int ExitCode { get; init; }
+        public ExitException() 
+        {
+            ExitCode = 0;
+        }
+        public ExitException(int exitCode)
+        {
+            ExitCode = exitCode;
+        }
     }
 }

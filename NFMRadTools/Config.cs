@@ -12,6 +12,7 @@ namespace NFMRadTools
     public class Config
     {
         public string CarDirectory { get; set; }
+        //public string ImportDirectory { get; set; }
 
         public void Save(string ConfigPath)
         {

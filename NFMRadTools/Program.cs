@@ -1,5 +1,6 @@
 ﻿using NFMRadTools.Commanding;
 using NFMRadTools.Editing;
+using NFMRadTools.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -59,7 +60,15 @@ namespace NFMRadTools
                 catch (Exception e)
                 {
                     if (e is null) throw new Exception("Unknown error.", e);
-                    if (e is ExitException || e.InnerException is ExitException) return;
+                    if (e is ExitException || e.InnerException is ExitException)
+                    {
+                        int exitCode = 0;
+                        ExitException exitException = e as ExitException;
+                        exitException ??= e.InnerException as ExitException;
+                        exitCode = exitException.ExitCode;
+                        Environment.Exit(exitCode);
+                        return;
+                    }
                     Logger.Error(e.ToString());
                 }
             }

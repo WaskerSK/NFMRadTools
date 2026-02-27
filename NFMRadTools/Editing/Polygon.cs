@@ -8,12 +8,14 @@ namespace NFMRadTools.Editing
 {
     public class Polygon
     {
+        public bool AlternativePolyMarkup { get; set; }
         public bool NoOutline { get; set; }
         public Color Color { get; set; }
         public int? Fs { get; set; }
         public int Gr { get; set; }
         public List<Vertex> Vertices { get; }
         public List<string> Metadata { get; }
+        public PolyGroup PolyGroup { get; set; }
 
         public Polygon()
         {
@@ -24,7 +26,10 @@ namespace NFMRadTools.Editing
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("<p>");
+            if (AlternativePolyMarkup)
+                sb.AppendLine("[p]");
+            else
+                sb.AppendLine("<p>");
             if (NoOutline)
                 sb.AppendLine("noOutline");
             sb.Append("c(").Append(Color.ToString()).AppendLine(")");
@@ -36,12 +41,19 @@ namespace NFMRadTools.Editing
             {
                 sb.AppendLine(metadata);
             }
+            if(PolyGroup.Mode == PolyGroupMode.PhyrexianWheel)
+            {
+                sb.Append("wheel(").Append(PolyGroup.PhyrexianWheelIndex).AppendLine(")");
+            }
             sb.AppendLine();
             foreach (Vertex v in Vertices)
             {
                 sb.AppendLine(v.ToString());
             }
-            sb.AppendLine("</p>");
+            if (AlternativePolyMarkup)
+                sb.AppendLine("[/p]");
+            else
+                sb.AppendLine("</p>");
             sb.AppendLine();
             return sb.ToString();
         }
