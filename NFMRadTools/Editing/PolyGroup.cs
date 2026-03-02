@@ -125,16 +125,5 @@ namespace NFMRadTools.Editing
 
             return sb.ToString();
         }
-
-        public static string GetRandomGroupName()
-        {
-            Span<char> s = stackalloc char[8];
-            for (int i = 0; i < s.Length; i++)
-            {
-                int random = Random.Shared.Next('A', 'Z' + 1);
-                s[i] = (char)random;
-            }
-            return s.ToString();
-        }
     }
 }

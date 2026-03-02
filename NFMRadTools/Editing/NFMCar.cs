@@ -13,6 +13,7 @@ namespace NFMRadTools.Editing
 {
     public class NFMCar
     {
+        public string LoadedFromFile { get; set; }
         public Color? FirstColor { get; set; }
         public Color? SecondColor { get; set; }
         public List<string> Metadata { get; }
@@ -114,12 +115,12 @@ namespace NFMRadTools.Editing
                 {
                     if (currentGroup is null || currentPoly is null) throw new FormatException();
                     Color c = new Color();
-                    ReadOnlySpan<char> r = line.Slice(2, GetLengthOfNumericCharactersFromIndex(line, 2));
+                    ReadOnlySpan<char> r = line.Slice(2, line.GetLengthOfNumericCharactersFromIndex(2));
                     int indexOfFirstComma = line.IndexOf(',');
-                    ReadOnlySpan<char> g = line.Slice(indexOfFirstComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFirstComma + 1));
+                    ReadOnlySpan<char> g = line.Slice(indexOfFirstComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFirstComma + 1));
                     line = line.Slice(indexOfFirstComma + 1);
                     int indexOfSecondComma = line.IndexOf(',');
-                    ReadOnlySpan<char> b = line.Slice(indexOfSecondComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfSecondComma + 1));
+                    ReadOnlySpan<char> b = line.Slice(indexOfSecondComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfSecondComma + 1));
                     int iR = int.Parse(r);
                     int iG = int.Parse(g);
                     int iB = int.Parse(b);
@@ -133,12 +134,12 @@ namespace NFMRadTools.Editing
                 {
                     if (currentGroup is null || currentPoly is null) throw new FormatException();
                     Vertex v = new Vertex();
-                    ReadOnlySpan<char> x = line.Slice(2, GetLengthOfNumericCharactersFromIndex(line, 2));
+                    ReadOnlySpan<char> x = line.Slice(2, line.GetLengthOfNumericCharactersFromIndex(2));
                     int indexOfFirstComma = line.IndexOf(',');
-                    ReadOnlySpan<char> y = line.Slice(indexOfFirstComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFirstComma + 1));
+                    ReadOnlySpan<char> y = line.Slice(indexOfFirstComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFirstComma + 1));
                     line = line.Slice(indexOfFirstComma + 1);
                     int indexOfSecondComma = line.IndexOf(',');
-                    ReadOnlySpan<char> z = line.Slice(indexOfSecondComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfSecondComma + 1));
+                    ReadOnlySpan<char> z = line.Slice(indexOfSecondComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfSecondComma + 1));
                     v.X = x.IsWhiteSpace() ? 0 : int.Parse(x);
                     v.Y = y.IsWhiteSpace() ? 0 : int.Parse(y);
                     v.Z = z.IsWhiteSpace() ? 0 : int.Parse(z);
@@ -148,14 +149,14 @@ namespace NFMRadTools.Editing
                 if(line.StartsWith("fs("))
                 {
                     if (currentGroup is null || currentPoly is null) throw new FormatException();
-                    int value = int.Parse(line.Slice(3, GetLengthOfNumericCharactersFromIndex(line, 3)));
+                    int value = int.Parse(line.Slice(3, line.GetLengthOfNumericCharactersFromIndex(3)));
                     currentPoly.Fs = value;
                     continue;
                 }
                 if(line.StartsWith("gr("))
                 {
                     if (currentGroup is null || currentPoly is null) throw new FormatException();
-                    int value = int.Parse(line.Slice(3, GetLengthOfNumericCharactersFromIndex(line, 3)));
+                    int value = int.Parse(line.Slice(3, line.GetLengthOfNumericCharactersFromIndex(3)));
                     currentPoly.Gr = value;
                     continue;
                 }
@@ -169,12 +170,12 @@ namespace NFMRadTools.Editing
                 {
                     line = line.Slice("1stColor(".Length);
                     Color c = new Color();
-                    ReadOnlySpan<char> r = line.Slice(0, GetLengthOfNumericCharactersFromIndex(line, 0));
+                    ReadOnlySpan<char> r = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
                     int indexOfFirstComma = line.IndexOf(',');
-                    ReadOnlySpan<char> g = line.Slice(indexOfFirstComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFirstComma + 1));
+                    ReadOnlySpan<char> g = line.Slice(indexOfFirstComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFirstComma + 1));
                     line = line.Slice(indexOfFirstComma + 1);
                     int indexOfSecondComma = line.IndexOf(',');
-                    ReadOnlySpan<char> b = line.Slice(indexOfSecondComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfSecondComma + 1));
+                    ReadOnlySpan<char> b = line.Slice(indexOfSecondComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfSecondComma + 1));
                     int iR = int.Parse(r);
                     int iG = int.Parse(g);
                     int iB = int.Parse(b);
@@ -188,12 +189,12 @@ namespace NFMRadTools.Editing
                 {
                     line = line.Slice("2ndColor(".Length);
                     Color c = new Color();
-                    ReadOnlySpan<char> r = line.Slice(0, GetLengthOfNumericCharactersFromIndex(line, 0));
+                    ReadOnlySpan<char> r = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
                     int indexOfFirstComma = line.IndexOf(',');
-                    ReadOnlySpan<char> g = line.Slice(indexOfFirstComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFirstComma + 1));
+                    ReadOnlySpan<char> g = line.Slice(indexOfFirstComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFirstComma + 1));
                     line = line.Slice(indexOfFirstComma + 1);
                     int indexOfSecondComma = line.IndexOf(',');
-                    ReadOnlySpan<char> b = line.Slice(indexOfSecondComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfSecondComma + 1));
+                    ReadOnlySpan<char> b = line.Slice(indexOfSecondComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfSecondComma + 1));
                     int iR = int.Parse(r);
                     int iG = int.Parse(g);
                     int iB = int.Parse(b);
@@ -218,14 +219,14 @@ namespace NFMRadTools.Editing
                         if (choiceIndex == 0) //radius
                         {
                             line = line.Slice("radius=\"".Length);
-                            ReadOnlySpan<char> radiusChars = line.Slice(0, GetLengthOfNumericCharactersFromIndex(line, 0));
+                            ReadOnlySpan<char> radiusChars = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
                             radius = int.Parse(radiusChars);
                             line = line.Slice(radiusChars.Length + 1).TrimStart();
                         }
                         else //depth
                         {
                             line = line.Slice("depth=\"".Length);
-                            ReadOnlySpan<char> depthChars = line.Slice(0, GetLengthOfNumericCharactersFromIndex(line, 0));
+                            ReadOnlySpan<char> depthChars = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
                             depth = int.Parse(depthChars);
                             line = line.Slice(depthChars.Length + 1).TrimStart();
                         }
@@ -250,7 +251,7 @@ namespace NFMRadTools.Editing
                 {
                     currentMode = PolyGroupMode.PhyrexianWheel;
                     line = line.Slice("<phy-wheel-".Length);
-                    phyIndex = int.Parse(line.Slice(0, GetLengthOfNumericCharactersFromIndex(line, 0)));
+                    phyIndex = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
                     currentGroup = null;
                     continue;
                 }
@@ -264,7 +265,7 @@ namespace NFMRadTools.Editing
                 if(line.StartsWith("gwgr("))
                 {
                     line = line.Slice("gwgr(".Length);
-                    line = line.Slice(0, GetLengthOfNumericCharactersFromIndex(line, 0));
+                    line = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
                     int gwgr = int.Parse(line);
                     wheel = new Wheel();
                     wheel.GwGr = gwgr;
@@ -277,12 +278,12 @@ namespace NFMRadTools.Editing
                     if (wheel is null) throw new FormatException();
                     line = line.Slice("rims(".Length);
                     Color c = new Color();
-                    ReadOnlySpan<char> r = line.Slice(0, GetLengthOfNumericCharactersFromIndex(line, 0));
+                    ReadOnlySpan<char> r = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
                     int indexOfFirstComma = line.IndexOf(',');
-                    ReadOnlySpan<char> g = line.Slice(indexOfFirstComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFirstComma + 1));
+                    ReadOnlySpan<char> g = line.Slice(indexOfFirstComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFirstComma + 1));
                     line = line.Slice(indexOfFirstComma + 1);
                     int indexOfSecondComma = line.IndexOf(',');
-                    ReadOnlySpan<char> b = line.Slice(indexOfSecondComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfSecondComma + 1));
+                    ReadOnlySpan<char> b = line.Slice(indexOfSecondComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfSecondComma + 1));
                     int iR = int.Parse(r);
                     int iG = int.Parse(g);
                     int iB = int.Parse(b);
@@ -292,12 +293,12 @@ namespace NFMRadTools.Editing
                     wheel.RimsColor = c;
                     line = line.Slice(indexOfSecondComma + 1);
                     int indexOfThirdComma = line.IndexOf(',');
-                    ReadOnlySpan<char> size = line.Slice(indexOfThirdComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfThirdComma + 1));
+                    ReadOnlySpan<char> size = line.Slice(indexOfThirdComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfThirdComma + 1));
                     int iSize = int.Parse(size);
                     wheel.RimSize = iSize;
                     line = line.Slice(indexOfThirdComma + 1);
                     int indexOfFourthComma = line.IndexOf(",");
-                    ReadOnlySpan<char> depth = line.Slice(indexOfFourthComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFourthComma + 1));
+                    ReadOnlySpan<char> depth = line.Slice(indexOfFourthComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFourthComma + 1));
                     wheel.RimDepth = int.Parse(depth);
                     continue;
                 }
@@ -306,25 +307,25 @@ namespace NFMRadTools.Editing
                     if (wheel is null) throw new FormatException();
                     //w(x,y,z,steer,width,height)
                     line = line.Slice("w(".Length);
-                    ReadOnlySpan<char> x = line.Slice(0, GetLengthOfNumericCharactersFromIndex(line, 0));
+                    ReadOnlySpan<char> x = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
                     int indexOfFirstComma = line.IndexOf(',');
-                    ReadOnlySpan<char> y = line.Slice(indexOfFirstComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFirstComma + 1));
+                    ReadOnlySpan<char> y = line.Slice(indexOfFirstComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFirstComma + 1));
                     line = line.Slice(indexOfFirstComma + 1);
                     int indexOfSecondComma = line.IndexOf(',');
-                    ReadOnlySpan<char> z = line.Slice(indexOfSecondComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfSecondComma + 1));
+                    ReadOnlySpan<char> z = line.Slice(indexOfSecondComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfSecondComma + 1));
                     int iX = int.Parse(x);
                     int iY = int.Parse(y);
                     int iZ = int.Parse(z);
                     line = line.Slice(indexOfSecondComma + 1);
                     int indexOfThirdComma = line.IndexOf(',');
-                    ReadOnlySpan<char> steer = line.Slice(indexOfThirdComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfThirdComma + 1));
+                    ReadOnlySpan<char> steer = line.Slice(indexOfThirdComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfThirdComma + 1));
                     int iSteer = int.Parse(steer);
                     line = line.Slice(indexOfThirdComma + 1);
                     int indexOfFourthComma = line.IndexOf(",");
-                    ReadOnlySpan<char> width = line.Slice(indexOfFourthComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFourthComma + 1));
+                    ReadOnlySpan<char> width = line.Slice(indexOfFourthComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFourthComma + 1));
                     int iWidth = int.Parse(width);
                     int indexOfFifthComma = line.IndexOf(',');
-                    ReadOnlySpan<char> height = line.Slice(indexOfFifthComma + 1, GetLengthOfNumericCharactersFromIndex(line, indexOfFifthComma + 1));
+                    ReadOnlySpan<char> height = line.Slice(indexOfFifthComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFifthComma + 1));
                     int iHeight = int.Parse(height);
                     Wheel.Instance wheelInstance = new Wheel.Instance();
                     wheelInstance.X = iX;
@@ -355,19 +356,6 @@ namespace NFMRadTools.Editing
             return -1;
         }
 
-        private static int GetLengthOfNumericCharactersFromIndex(ReadOnlySpan<char> span, int index)
-        {
-            if(index < 0) return 0;
-            if(span.Length <= 0 || index >= span.Length) return 0;
-            int i = 0;
-            for(; index + i < span.Length; i++)
-            {
-                if (char.IsNumber(span[index + i])) continue;
-                if (span[index + i] == '-') continue;
-                return i;
-            }
-            return i;
-        }
 
         public override string ToString()
         {

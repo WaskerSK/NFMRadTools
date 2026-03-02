@@ -27,5 +27,25 @@ namespace System
             return Unsafe.As<byte, T>(ref Unsafe.AddByteOffset(ref zeroIndexElement, (Unsafe.SizeOf<T>() + Unsafe.SizeOf<int>() * 2) * index));
         }
         #endregion
+
+        #region CharacterSpan
+        public static int GetLengthOfNumericCharactersFromIndex(this ReadOnlySpan<char> span, int index)
+        {
+            if (index < 0) return 0;
+            if (span.Length <= 0 || index >= span.Length) return 0;
+            int i = 0;
+            if ((uint)index >= (uint)span.Length) return i;
+            if(span[index] == '-')
+            {
+                i++;
+            }
+            for (; index + i < span.Length; i++)
+            {
+                if (char.IsNumber(span[index + i])) continue;
+                return i;
+            }
+            return i;
+        }
+        #endregion
     }
 }

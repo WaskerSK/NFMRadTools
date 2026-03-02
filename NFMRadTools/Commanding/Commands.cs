@@ -1,4 +1,6 @@
 ﻿using NFMRadTools.Editing;
+using NFMRadTools.Utilities;
+using NFMRadTools.Utilities.Importing;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -27,7 +29,7 @@ namespace NFMRadTools.Commanding
             }
             Program.Config.CarDirectory = Folder;
             Logger.Info($"Car directory was set to: \"{Folder}\".");
-            string configPath = $"{Environment.CurrentDirectory}\\Config.json";
+            string configPath = Path.Combine(Environment.CurrentDirectory, "Config.json");
             try
             {
                 Program.Config.Save(configPath);
@@ -124,7 +126,7 @@ namespace NFMRadTools.Commanding
             =Inputs=
             string CarName - The name of the car to load. Note: Do not include a file extension.
             =Remarks=
-            You can puth full path to a car file as the car name if u wanna load from external folder.
+            You can put full path to a car file as the car name if u wanna load from external folder.
             Note: if using full path to car file you need to include an extension.
             """)]
         public static void LoadCar(string CarName)
@@ -136,7 +138,7 @@ namespace NFMRadTools.Commanding
             }
             string filePath = null;
             if (!File.Exists(CarName))
-                filePath = $"{Program.CarDirectory}\\{CarName}{Program.NFMCarExtension}";
+                filePath = Path.Combine(Program.CarDirectory, $"{CarName}{Program.NFMCarExtension}");
             else
                 filePath = CarName;
             string carData = null;
@@ -154,10 +156,20 @@ namespace NFMRadTools.Commanding
             {
                 Logger.Error("Car failed to load.");
             }
-            else
+            Program.CurrentCar.LoadedFromFile = filePath;
+            Logger.Info("Car loaded.");
+        }
+
+        [Command(CommandName = "reload")]
+        [Description("Reloads the currently loaded car.")]
+        public static void Reload()
+        {
+            if(!File.Exists(Program.CurrentCar.LoadedFromFile))
             {
-                Logger.Info("Car loaded.");
+                Logger.Error($"Failed to reload car, the file \"{Program.CurrentCar.LoadedFromFile}\" no longer exists.");
+                return;
             }
+            LoadCar(Program.CurrentCar.LoadedFromFile);
         }
 
         [Command(CommandName = "print", VerifyCarLoaded = true)]
@@ -172,21 +184,36 @@ namespace NFMRadTools.Commanding
         [Description("""
             Saves the currently loaded car into the current car folder.
             =Inputs=
-            string CarName - The name of the car file name. Note: Do not include a file extension.
+            string CarName (optional) - The name of the car file name. Note: Do not include a file extension.
             """)]
-        public static void Save(string CarName)
+        public static void Save(string CarName = null)
         {
+            bool carNameIsPath = false;
             if (string.IsNullOrWhiteSpace(CarName))
             {
-                Logger.Error("No car name specified.");
-                return;
+                if(string.IsNullOrWhiteSpace(Program.CurrentCar.LoadedFromFile))
+                {
+                    Logger.Error("No car name specified.");
+                    return;
+                }
+                CarName = Program.CurrentCar.LoadedFromFile;
+                if(!CarName.EndsWith(".rad"))
+                {
+                    CarName = Path.ChangeExtension(CarName, "rad");
+                }
+                carNameIsPath = true;
             }
-            if (CarName.AsSpan().ContainsAny(Path.GetInvalidFileNameChars()))
+            if(!carNameIsPath)
             {
-                Logger.Error("Invalid car file name.");
-                return;
+                if (CarName.AsSpan().ContainsAny(Path.GetInvalidFileNameChars()))
+                {
+                    Logger.Error("Invalid car file name.");
+                    return;
+                }
             }
-            string filePath = $"{Program.CarDirectory}\\{CarName}{Program.NFMCarExtension}";
+            string filePath = null;
+            if(carNameIsPath) filePath = CarName;
+            else filePath = Path.Combine(Program.CarDirectory, $"{CarName}{Program.NFMCarExtension}");
             File.WriteAllText(filePath, Program.CurrentCar.ToString());
             Logger.Info($"Car saved: \"{filePath}\".");
         }
@@ -227,7 +254,7 @@ namespace NFMRadTools.Commanding
             if(string.IsNullOrWhiteSpace(Name))
             {
                 Logger.Warning("Invalid name provided. Generating random name.");
-                Name = PolyGroup.GetRandomGroupName();
+                Name = RandomName.Get();
             }
             PolyGroup g = new PolyGroup();
             g.Name = Name;
@@ -249,11 +276,27 @@ namespace NFMRadTools.Commanding
             """)]
         public static void MovePolygonsToGroup(int SourceGroupIndex, int TargetGroupIndex, int PolyStartIndex, int PolyCount)
         {
+            if(SourceGroupIndex < 0 || SourceGroupIndex >= Program.CurrentCar.PolyGroups.Count)
+            {
+                Logger.Error("Invalid source group index.");
+                return;
+            }
+            if(TargetGroupIndex < 0 || TargetGroupIndex >= Program.CurrentCar.PolyGroups.Count)
+            {
+                Logger.Error("Invalid target group index.");
+                return;
+            }
             PolyGroup source = Program.CurrentCar.PolyGroups[SourceGroupIndex];
             PolyGroup target = Program.CurrentCar.PolyGroups[TargetGroupIndex];
+            if (PolyStartIndex < 0 || PolyStartIndex >= source.Polygons.Count)
+            {
+                Logger.Error("Invalid poly start index.");
+                return;
+            }
+            PolyCount = (int)uint.Clamp((uint)PolyCount, 0, (uint)source.Polygons.Count - (uint)PolyStartIndex);
             target.AddPolygons(source.Polygons.Take(new Range(PolyStartIndex, PolyStartIndex + PolyCount)));
             source.RemoveRange(PolyStartIndex, PolyCount);
-            Logger.Info($"{PolyCount} polygons moved from group [{SourceGroupIndex}] to group [{TargetGroupIndex}].");
+            Logger.Info($"{PolyCount} polygons moved from group [{SourceGroupIndex}] - {source.Name} to group [{TargetGroupIndex}] {target.Name}.");
         }
 
         [Command(CommandName = "car.groups.setcolor", VerifyCarLoaded = true)]
@@ -370,7 +413,7 @@ namespace NFMRadTools.Commanding
             =Inputs=
             bool Value - The bool value that indicates wether the car will have outlines.
             =Remarks=
-            Use true if u want outline, otherwise false for no outline.
+            Use true if you want outline, otherwise false for no outline.
             """)]
         public static void SetCarOutline(bool Value)
         {
@@ -501,9 +544,9 @@ namespace NFMRadTools.Commanding
         {
             Logger.Info("Calculating colors.");
             Dictionary<Color, int> d = new Dictionary<Color, int>();
-            foreach(PolyGroup mg in Program.CurrentCar.PolyGroups)
+            foreach(PolyGroup g in Program.CurrentCar.PolyGroups.Where(x => x.Mode == PolyGroupMode.Normal))
             {
-                foreach(Polygon p in mg.Polygons)
+                foreach(Polygon p in g.Polygons)
                 {
                     Color c = p.Color;
                     if(d.TryGetValue(c, out int count))
@@ -541,9 +584,38 @@ namespace NFMRadTools.Commanding
             Program.CurrentCar.SecondColor = c2;
             Logger.Info($"First color was set to ({c1}) - {c1Count} polygons, Second color was set to ({c2}) - {c2Count} polygons.");
         }
-        public static void ImportObj()
-        {
 
+        [Command(CommandName = "import")]
+        public static void Import(string File, double ImportScale = 1.0)
+        {
+            if(string.IsNullOrWhiteSpace(File))
+            {
+                Logger.Error("Invalid file name.");
+                return;
+            }
+            Importer imp = ImportRegistry.GetImporter(File);
+            if(imp is null)
+            {
+                Logger.Error($"File: \"{File}\" is not supported for importing.");
+                return;
+            }
+            try
+            {
+                Program.CurrentCar = imp.ImportCar(File, ImportScale);
+            }
+            catch(Exception ex)
+            {
+                Program.CurrentCar = null;
+                Logger.Error("Failed to import car.");
+                Logger.Error(ex.ToString());
+                return;
+            }
+            if(Program.CurrentCar is null)
+            {
+                Logger.Error("Failed to import car. Unknown error."); //unkown error.
+                return;
+            }
+            Logger.Info("Car imported.");
         }
     }
 }

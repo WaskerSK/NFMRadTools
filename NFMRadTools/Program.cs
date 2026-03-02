@@ -22,7 +22,7 @@ namespace NFMRadTools
         public static NFMCar CurrentCar = null;
         static void Main(string[] args)
         {
-            string configPath = $"{Environment.CurrentDirectory}\\Config.json";
+            string configPath = Path.Combine(Environment.CurrentDirectory, "Config.json");
             try
             {
                 InitConfig(configPath);
