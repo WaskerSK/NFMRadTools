@@ -1,4 +1,5 @@
-﻿using NFMRadTools.Utilities.Macros;
+﻿using NFMRadTools.Utilities;
+using NFMRadTools.Utilities.Macros;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -54,7 +55,7 @@ namespace NFMRadTools.Editing
                     {
                         currentGroup = new PolyGroup();
                         currentGroup.Mode = currentMode;
-                        currentGroup.Name = PolyGroup.GetRandomGroupName();
+                        currentGroup.Name = RandomName.Get();
                         car.PolyGroups.Add(currentGroup);
                     }
                     currentPoly = new Polygon();
@@ -66,7 +67,7 @@ namespace NFMRadTools.Editing
                     {
                         currentGroup = new PolyGroup();
                         currentGroup.Mode = currentMode;
-                        currentGroup.Name = PolyGroup.GetRandomGroupName();
+                        currentGroup.Name = RandomName.Get();
                         car.PolyGroups.Add(currentGroup);
                     }
                     currentPoly = new Polygon();
@@ -92,7 +93,7 @@ namespace NFMRadTools.Editing
                     currentGroup = new PolyGroup();
                     if (line.IsEmpty || line.IsWhiteSpace())
                     {
-                        currentGroup.Name = PolyGroup.GetRandomGroupName();
+                        currentGroup.Name = RandomName.Get();
                     }
                     else
                     {
