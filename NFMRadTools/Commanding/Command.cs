@@ -54,14 +54,11 @@ namespace NFMRadTools.Commanding
             {
                 if(!argEnumerator.MoveNext())
                 {
-                    if(pi.IsOptional && pi.HasDefaultValue)
-                    {
-                        arrArgs[index] = pi.DefaultValue;
-                        index++;
-                        continue;
-                    }
-                    Logger.Error($"Missing argument for [{TypeNames.GetTypeName(pi.ParameterType)} {pi.Name}].");
-                    return;
+                    goto TryAssignDefaultValueToArgument;
+                }
+                if(argEnumerator.Current.ToSpan().SequenceEqual("-"))
+                {
+                    goto TryAssignDefaultValueToArgument;
                 }
                 if (!ValueParser.TryParse(argEnumerator.Current.ToString(), pi.ParameterType, out object obj))
                 {
@@ -70,6 +67,17 @@ namespace NFMRadTools.Commanding
                 }
                 arrArgs[index] = obj;
                 index++;
+                continue;
+
+                TryAssignDefaultValueToArgument:
+                if (pi.IsOptional && pi.HasDefaultValue)
+                {
+                    arrArgs[index] = pi.DefaultValue;
+                    index++;
+                    continue;
+                }
+                Logger.Error($"Missing argument for [{TypeNames.GetTypeName(pi.ParameterType)} {pi.Name}].");
+                return;
             }
             Method.Invoke(null, arrArgs);
         }
@@ -87,6 +95,14 @@ namespace NFMRadTools.Commanding
                 sb.Append(TypeNames.GetTypeName(param.ParameterType));
                 sb.Append(" ");
                 sb.Append(param.Name);
+                if(param.IsOptional && param.HasDefaultValue)
+                {
+                    sb.Append(" = ");
+                    string dv = "\'null\'";
+                    if(param.DefaultValue is not null)
+                        dv = param.DefaultValue.ToString();
+                    sb.Append(dv);
+                }
                 i++;
                 if(i < parameters.Length) sb.Append(", ");
             }

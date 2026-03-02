@@ -17,12 +17,16 @@ namespace NFMRadTools.Editing
         [EnumAlternativeName("ds-cw")]
         [EnumAlternativeName("ds")]
         [EnumAlternativeName("ds-w")]
+        [EnumAlternativeName("dragshot")]
+        [EnumAlternativeName("dragshotw")]
         DragShotWheel,
         [EnumAlternativeName("phy")]
         [EnumAlternativeName("phycw")]
         [EnumAlternativeName("phy-cw")]
         [EnumAlternativeName("phyw")]
         [EnumAlternativeName("phy-w")]
+        [EnumAlternativeName("phyrexian")]
+        [EnumAlternativeName("phyrexianw")]
         PhyrexianWheel
     }
 }

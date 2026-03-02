@@ -45,7 +45,7 @@ namespace NFMRadTools
                     if (!CommandList.TryGetValue(cmd, out Command command))
                     {
                         Logger.Error($"Invalid command \"{cmd}\".");
-                        Logger.Info("Type hlep to list commands.");
+                        Logger.Info("Type help to list commands.");
                         continue;
                     }
                     if(command.VerifyCarLoaded)

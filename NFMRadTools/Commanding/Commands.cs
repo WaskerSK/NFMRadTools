@@ -67,6 +67,7 @@ namespace NFMRadTools.Commanding
             {
                 Logger.Error($"Invalid page number: {Page}.");
             }
+            Logger.Info("Optional parameters can be skipped with \'-\'");
             Logger.Info("List of commands:");
             string pageMsg = $"[Page {Page}/{pages}]";
             Logger.Log(pageMsg, ConsoleColor.White);
@@ -82,7 +83,7 @@ namespace NFMRadTools.Commanding
             }
             Logger.Log(sb.ToString(), ConsoleColor.Cyan);
             Logger.Log(pageMsg, ConsoleColor.White);
-            Logger.Info("Type help <PageNumber> to view other pages.");
+            Logger.Info("Type help PageNumber to view other pages.");
         }
 
         [Command(CommandName = "help.command")]
