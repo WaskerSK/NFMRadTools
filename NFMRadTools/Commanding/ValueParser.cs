@@ -19,6 +19,10 @@ namespace NFMRadTools.Commanding
                 result = value;
                 return true;
             }
+            if (type.IsEnum)
+            {
+                return AlternativeEnumParser.TryParse(type, value, true, out result);
+            }
             Type genericType = typeof(IParsable<>).MakeGenericType(type);
             if (type.GetInterfaces().Any(x => x == genericType))
             {
@@ -40,10 +44,6 @@ namespace NFMRadTools.Commanding
                 {
                 }
                 return false;
-            }
-            if(type.IsEnum)
-            {
-                return AlternativeEnumParser.TryParse(type, value, true, out result);
             }
             return false;
         }
