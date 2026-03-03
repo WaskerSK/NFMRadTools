@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NFMRadTools.Commanding
 {
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = false)]
     public class DescriptionAttribute : Attribute
     {
         public string Description { get; }

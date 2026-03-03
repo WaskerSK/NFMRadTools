@@ -16,6 +16,7 @@ namespace NFMRadTools
     public class Program
     {
         public static string CarDirectory => Config.CarDirectory;
+        public static string ImportDirectory => Config.ImportDirectory;
         public static Config Config { get; private set; }
         public const string NFMCarExtension = ".rad";
         public static SortedDictionary<string, Command> CommandList = new SortedDictionary<string, Command>(StringComparer.OrdinalIgnoreCase);
@@ -42,6 +43,10 @@ namespace NFMRadTools
                 {
                     string s = Console.ReadLine();
                     string cmd = GetCommandNameFromInputString(s);
+                    if(cmd.EndsWith('?'))
+                    {
+                        cmd = "?";
+                    }
                     if (!CommandList.TryGetValue(cmd, out Command command))
                     {
                         Logger.Error($"Invalid command \"{cmd}\".");
@@ -54,7 +59,16 @@ namespace NFMRadTools
                             continue;
                     }
                     if (command.HasArgs)
-                        command.Execute(s.AsSpan().Trim().Slice(cmd.Length).Trim().ToString());
+                    {
+                        if(command.Name == "?")
+                        {
+                            command.Execute(s.AsSpan().Trim().Slice(0, s.Length - 1).Trim().ToString());
+                        }
+                        else
+                        {
+                            command.Execute(s.AsSpan().Trim().Slice(cmd.Length).Trim().ToString());
+                        }
+                    }
                     else command.Execute(null);
                 }
                 catch (Exception e)

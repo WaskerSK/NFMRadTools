@@ -21,7 +21,7 @@ namespace NFMRadTools.Utilities.Importing
             string objData = null;
             try
             {
-                objData = System.IO.File.ReadAllText(filename);
+                objData = File.ReadAllText(filename);
             }
             catch (Exception ex)
             {

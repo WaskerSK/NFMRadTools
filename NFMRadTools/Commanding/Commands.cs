@@ -14,14 +14,24 @@ namespace NFMRadTools.Commanding
     [Command]
     public static class Commands
     {
-        [Command(CommandName = "game.setcarfolder")]
+        [Command(CommandName = "game.carfolder")]
         [Description("""
-            Sets the folder from which to load and save cars.
+            Prints or sets the folder from which cars are loaded or saved to.
             =Inputs=
-            string Folder - The car folder path.
+            string Folder (optional) - The new car folder path.
+            =Remarks=
+            Do not provide a folder to print the current car folder path.
             """)]
-        public static void SetCarFolder(string Folder)
+        public static void GameCarFolder(string Folder = null)
         {
+            if(string.IsNullOrWhiteSpace(Folder))
+            {
+                if (string.IsNullOrWhiteSpace(Program.CarDirectory))
+                    Logger.Error("Car directory is not set.");
+                else
+                    Logger.Info(Program.CarDirectory);
+                return;
+            }
             if (!Directory.Exists(Folder))
             {
                 Logger.Error("Directory not found.");
@@ -34,21 +44,11 @@ namespace NFMRadTools.Commanding
             {
                 Program.Config.Save(configPath);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.Warning("Failed to save config.");
                 Logger.Error(e.ToString());
             }
-        }
-
-        [Command(CommandName = "game.carfolder")]
-        [Description("Prints the current car folder from which cars are loaded and saved to.")]
-        public static void PrintCarFolder()
-        {
-            if (string.IsNullOrWhiteSpace(Program.CarDirectory))
-                Logger.Error("Car directory is not set.");
-            else
-                Logger.Info(Program.CarDirectory);
         }
 
         [Command(CommandName = "help")]
@@ -86,13 +86,15 @@ namespace NFMRadTools.Commanding
             Logger.Info("Type help PageNumber to view other pages.");
         }
 
-        [Command(CommandName = "help.command")]
+        [Command(CommandName = "?")]
         [Description("""
             Shows help for a specific command.
             =Inputs=
             string Command (optional) - The command to show help for. If not provided shows help for itself.
+            =Usage=
+            car.groups.list? - shows help for the command car.groups.list.
             """)]
-        public static void CommandHelp(string Command = "help.command")
+        public static void CommandHelp(string Command = "?")
         {
             if(string.IsNullOrWhiteSpace(Command))
             {
@@ -229,12 +231,6 @@ namespace NFMRadTools.Commanding
                 Console.Write("[");
                 Console.Write(i);
                 Console.Write("] - ");
-                /*if (Program.CurrentCar.PolyGroups[i].Name is null)
-                {
-                    Console.Write("Group_");
-                    Console.Write(i + 1);
-                }*/
-                //else Console.Write(Program.CurrentCar.PolyGroups[i].Name);
                 Console.Write(Program.CurrentCar.PolyGroups[i].Name);
                 Console.Write(" - (");
                 Console.Write(Program.CurrentCar.PolyGroups[i].Polygons.Count);
@@ -540,59 +536,215 @@ namespace NFMRadTools.Commanding
         }
 
         [Command(CommandName = "car.colors.auto", VerifyCarLoaded = true)]
-        [Description("Scans the colors of all polygons and sets 1st and 2nd color based on the 2 most common colors.")]
-        public static void AutoSetCarColors()
+        [Description("""
+            Scans the colors of all polygons and sets 1st and 2nd color based on the 2 most common colors based on given mode.
+            =Inputs=
+            AutoColoringMode Mode (optional) - Mode which determins how the algorythm decides what colors are used the most.
+            """)]
+        public static void AutoSetCarColors(AutoColoringMode Mode = AutoColoringMode.Polygons)
         {
             Logger.Info("Calculating colors.");
-            Dictionary<Color, int> d = new Dictionary<Color, int>();
-            foreach(PolyGroup g in Program.CurrentCar.PolyGroups.Where(x => x.Mode == PolyGroupMode.Normal))
+            IEnumerable<PolyGroup> groups = Program.CurrentCar.PolyGroups.Where(x => x.Mode == PolyGroupMode.Normal);
+            if(!groups.Any()) groups = Program.CurrentCar.PolyGroups;
+            switch(Mode)
             {
-                foreach(Polygon p in g.Polygons)
-                {
-                    Color c = p.Color;
-                    if(d.TryGetValue(c, out int count))
+                case AutoColoringMode.Polygons:
+                case AutoColoringMode.Vetrices:
                     {
-                        d[c] = count + 1;
+                        Dictionary<Color, int> d = new Dictionary<Color, int>();
+                        foreach (PolyGroup g in groups)
+                        {
+                            foreach (Polygon p in g.Polygons)
+                            {
+                                Color c = p.Color;
+                                if (d.TryGetValue(c, out int count))
+                                {
+                                    d[c] = count + (Mode == AutoColoringMode.Polygons ? 1 : p.Vertices.Count);
+                                }
+                                else
+                                {
+                                    d.Add(c, (Mode == AutoColoringMode.Polygons ? 1 : p.Vertices.Count));
+                                }
+                            }
+                        }
+                        Color c1 = new Color();
+                        int c1Count = 0;
+                        Color c2 = new Color();
+                        int c2Count = 0;
+                        foreach (KeyValuePair<Color, int> entry in d)
+                        {
+                            if (entry.Value > c1Count)
+                            {
+                                c2 = c1;
+                                c2Count = c1Count;
+                                c1 = entry.Key;
+                                c1Count = entry.Value;
+                                continue;
+                            }
+                            if (entry.Value > c2Count)
+                            {
+                                c2 = entry.Key;
+                                c2Count = entry.Value;
+                                continue;
+                            }
+                        }
+                        Program.CurrentCar.FirstColor = c1;
+                        Program.CurrentCar.SecondColor = c2;
+                        Logger.Info($"First color was set to ({c1}) - {c1Count} {(Mode == AutoColoringMode.Polygons ? "polygons" : "vertices")}, Second color was set to ({c2}) - {c2Count} {(Mode == AutoColoringMode.Polygons ? "polygons" : "vertices")}.");
+                        return;
                     }
-                    else
+                case AutoColoringMode.Bounds:
                     {
-                        d.Add(c, 1);
+                        Dictionary<Color, List<BoundingBox>> d = new Dictionary<Color, List<BoundingBox>>();
+                        foreach(PolyGroup g in groups)
+                        {
+                            foreach(Polygon p in g.Polygons)
+                            {
+                                BoundingBox b = BoundingBox.Make(p);
+                                if(d.TryGetValue(p.Color, out List<BoundingBox> bl))
+                                {
+                                    bl.Add(b);
+                                }
+                                else
+                                {
+                                    List<BoundingBox> l = new List<BoundingBox>();
+                                    l.Add(b);
+                                    d.Add(p.Color, l);
+                                }
+                            }
+                        }
+                        IEnumerable<KeyValuePair<Color, ulong>> volumes = d.Select(x =>
+                        {
+                            List<BoundingBox> boxes = x.Value;
+                            ulong volume = 0;
+                            if (boxes is null) volume = 0;
+                            else
+                            {
+                                for (int i = 0; i < boxes.Count; i++)
+                                {
+                                    BoundingBox box = boxes[i];
+                                    volume = box.Volume;
+                                    for(int j = i - 1;  j >= 0; j--)
+                                    {
+                                        BoundingBox other = boxes[j];
+                                        volume -= box.GetIntersectingVolume(other);
+                                    }
+                                }
+                            }
+                            return new KeyValuePair<Color, ulong>(x.Key, volume);
+                        });
+                        Color c1 = new Color();
+                        ulong c1Volume = 0;
+                        Color c2 = new Color();
+                        ulong c2Volume = 0;
+                        foreach (KeyValuePair<Color, ulong> entry in volumes)
+                        {
+                            if (entry.Value > c1Volume)
+                            {
+                                c2 = c1;
+                                c2Volume = c1Volume;
+                                c1 = entry.Key;
+                                c1Volume = entry.Value;
+                                continue;
+                            }
+                            if (entry.Value > c2Volume)
+                            {
+                                c2 = entry.Key;
+                                c2Volume = entry.Value;
+                                continue;
+                            }
+                        }
+                        Program.CurrentCar.FirstColor = c1;
+                        Program.CurrentCar.SecondColor = c2;
+                        Logger.Info($"First color was set to ({c1}) - {c1Volume} units of volume, Second color was set to ({c2}) - {c2Volume} units of volume.");
+                        return;
                     }
-                }
-            }
-            Color c1 = new Color();
-            int c1Count = 0;
-            Color c2 = new Color();
-            int c2Count = 0;
-            foreach(KeyValuePair<Color, int> entry in d)
-            {
-                if(entry.Value > c1Count)
-                {
-                    c2 = c1;
-                    c2Count = c1Count;
-                    c1 = entry.Key;
-                    c1Count = entry.Value;
-                    continue;
-                }
-                if(entry.Value > c2Count)
-                {
-                    c2 = entry.Key;
-                    c2Count = entry.Value;
-                    continue;
-                }
-            }
-            Program.CurrentCar.FirstColor = c1;
-            Program.CurrentCar.SecondColor = c2;
-            Logger.Info($"First color was set to ({c1}) - {c1Count} polygons, Second color was set to ({c2}) - {c2Count} polygons.");
-        }
+                case AutoColoringMode.SurfaceArea:
+                    {
+                        /*Dictionary<Color, double> d = new Dictionary<Color, double>();
+                        foreach(PolyGroup g in groups)
+                        {
+                            foreach(Polygon p in g.Polygons)
+                            {
 
-        [Command(CommandName = "import")]
-        public static void Import(string File, double ImportScale = 1.0)
+                            }
+                        }*/
+                        throw new NotImplementedException("Surface area calculation is not yet implemented.");
+                    }
+            }
+        }
+        [Command(CommandName = "game.importfolder")]
+        [Description("""
+            Prints or sets the folder from which cars are imported.
+            =Inputs=
+            string Folder (optional) - The new import folder path.
+            =Remarks=
+            Do not provide a folder to print the current import folder path.
+            """)]
+        public static void GameImportFolder(string Folder = null)
         {
+            if (string.IsNullOrWhiteSpace(Folder))
+            {
+                if (string.IsNullOrWhiteSpace(Program.ImportDirectory))
+                    Logger.Error("Import directory is not set.");
+                else
+                    Logger.Info(Program.ImportDirectory);
+                return;
+            }
+            if (!Directory.Exists(Folder))
+            {
+                Logger.Error("Directory not found.");
+                return;
+            }
+            Program.Config.ImportDirectory = Folder;
+            Logger.Info($"Import directory was set to: \"{Folder}\".");
+            string configPath = Path.Combine(Environment.CurrentDirectory, "Config.json");
+            try
+            {
+                Program.Config.Save(configPath);
+            }
+            catch (Exception e)
+            {
+                Logger.Warning("Failed to save config.");
+                Logger.Error(e.ToString());
+            }
+        }
+        [Command(CommandName = "import")]
+        [Description("""
+            Imports a model and create a new car or merges the model with an already loaded car.
+            =Inputs=
+            string File - A full path to a file or a file name of the model.
+            ImportMode Mode (optional) - An import mode method to use. New to create a new car or Merge to combine with currently loaded car.
+            double Scale (optional) - The scale of the car when imported.
+            =Remarks=
+            If a file name is provided without a full path, the import folder will be used to look for the file.
+            """)]
+        public static void Import(string File, ImportMode Mode = ImportMode.New, double Scale = 1.0)
+        {
+            if(Mode < 0 || Mode > ImportMode.Merge)
+            {
+                Logger.Error("Invalid import mode.");
+                return;
+            }
             if(string.IsNullOrWhiteSpace(File))
             {
                 Logger.Error("Invalid file name.");
                 return;
+            }
+            if(!System.IO.File.Exists(File))
+            {
+                if(!Directory.Exists(Program.ImportDirectory))
+                {
+                    Logger.Error("Import directory is not defined.");
+                    return;
+                }
+                string localPath = Path.Combine(Program.ImportDirectory, File);
+                if(!System.IO.File.Exists(localPath))
+                {
+                    Logger.Error($"File: {localPath} was not found.");
+                    return;
+                }
+                File = localPath;
             }
             Importer imp = ImportRegistry.GetImporter(File);
             if(imp is null)
@@ -600,23 +752,50 @@ namespace NFMRadTools.Commanding
                 Logger.Error($"File: \"{File}\" is not supported for importing.");
                 return;
             }
+            NFMCar importedCar = null;
             try
             {
-                Program.CurrentCar = imp.ImportCar(File, ImportScale);
+                importedCar = imp.ImportCar(File, Scale);
             }
             catch(Exception ex)
             {
-                Program.CurrentCar = null;
                 Logger.Error("Failed to import car.");
                 Logger.Error(ex.ToString());
                 return;
             }
-            if(Program.CurrentCar is null)
+            if(importedCar is null)
             {
                 Logger.Error("Failed to import car. Unknown error."); //unkown error.
                 return;
             }
             Logger.Info("Car imported.");
+            switch(Mode)
+            {
+                case ImportMode.Merge:
+                    if(Program.CurrentCar is null)
+                    {
+                        Logger.Warning("There is no currently loaded car. Importing as new car instead.");
+                        goto case ImportMode.New;
+                    }
+                    Logger.Info("Merging cars.");
+                    foreach(PolyGroup g in importedCar.PolyGroups)
+                    {
+                        PolyGroup other = Program.CurrentCar.PolyGroups.FirstOrDefault(x => x.Name == g.Name && x.Mode == x.Mode);
+                        if(other is null)
+                        {
+                            Program.CurrentCar.PolyGroups.Add(g);
+                            continue;
+                        }
+                        other.AddPolygons(g.Polygons);
+                    }
+                    Logger.Info("Merging complete.");
+                    break;
+                case ImportMode.New:
+                    Program.CurrentCar = importedCar;
+                    break;
+            }
+            Logger.Info("Finished importing.");
+            return;
         }
     }
 }

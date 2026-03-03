@@ -57,5 +57,10 @@ namespace NFMRadTools.Editing
             sb.AppendLine();
             return sb.ToString();
         }
+
+        /*public double CalculateSurfaceArea()
+        {
+
+        }*/
     }
 }
