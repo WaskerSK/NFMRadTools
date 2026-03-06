@@ -19,9 +19,15 @@ namespace NFMRadTools.Editing
         [EnumAlternativeName("vertex")]
         Vetrices,
         [EnumAlternativeName("b")]
+        [EnumAlternativeName("box")]
         [EnumAlternativeName("bound")]
         [EnumAlternativeName("volume")]
         Bounds,
+        [EnumAlternativeName("e")]
+        [EnumAlternativeName("edge")]
+        [EnumAlternativeName("length")]
+        [EnumAlternativeName("len")]
+        Edge,
         [EnumAlternativeName("s")]
         [EnumAlternativeName("sur")]
         [EnumAlternativeName("surf")]

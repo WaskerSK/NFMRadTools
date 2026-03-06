@@ -4,6 +4,7 @@ using NFMRadTools.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -23,6 +24,8 @@ namespace NFMRadTools
         public static NFMCar CurrentCar = null;
         static void Main(string[] args)
         {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             string configPath = Path.Combine(Environment.CurrentDirectory, "Config.json");
             try
             {

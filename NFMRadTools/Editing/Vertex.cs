@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NFMRadTools.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,5 +17,8 @@ namespace NFMRadTools.Editing
         {
             return $"p({X},{Y},{Z})";
         }
+        
+        public static explicit operator Vector3D(Vertex vert) => new Vector3D(vert.X, vert.Y, vert.Z);
+        public static explicit operator Vertex(Vector3D v) => new Vertex() { X = (int)v.X, Y = (int)v.Y, Z = (int)v.Z };
     }
 }

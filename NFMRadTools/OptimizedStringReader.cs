@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace NFMRadTools
 {
+    [DebuggerDisplay("{LastReadLine}")]
     public ref struct OptimizedStringReader
     {
         public string Source { get; init; }

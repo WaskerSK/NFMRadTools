@@ -62,19 +62,24 @@ namespace NFMRadTools.Editing
         public bool AddPolygon(Polygon polygon)
         {
             if(polygon is null) return false;
+            if(polygon.PolyGroup == this) return false;
             _polygons.Add(polygon);
             polygon.PolyGroup = this;
+            if (Mode == PolyGroupMode.PhyrexianWheel)
+                polygon.AlternativePolyMarkup = true;
             return true;
         }
 
         public bool AddPolygons(IEnumerable<Polygon> polygons)
         {
             if(polygons is null) return false;
-            IEnumerable<Polygon> en = polygons.Where(x => x is not null);
+            IEnumerable<Polygon> en = polygons.Where(x => x is not null).Where(x => x.PolyGroup != this);
             _polygons.AddRange(polygons);
+            bool altMarkup = Mode == PolyGroupMode.PhyrexianWheel;
             foreach(Polygon p in en)
             {
                 p.PolyGroup = this;
+                p.AlternativePolyMarkup = altMarkup;
             }
             return en.Any();
         }

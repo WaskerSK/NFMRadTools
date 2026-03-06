@@ -42,7 +42,11 @@ namespace NFMRadTools.Editing
             PolyGroupMode currentMode = PolyGroupMode.Normal;
             PolyGroup currentGroup = null;
             Polygon currentPoly = null;
-            Wheel wheel = null;
+            //Wheel wheel = null;
+            int gwgr = 0;
+            Color rimColor = new Color(120,120,120);
+            int rimSize = 20;
+            int rimDepth = 10;
             while(!sr.EndOfString())
             {
                 ReadOnlySpan<char> line = sr.ReadLine();
@@ -267,16 +271,12 @@ namespace NFMRadTools.Editing
                 {
                     line = line.Slice("gwgr(".Length);
                     line = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
-                    int gwgr = int.Parse(line);
-                    wheel = new Wheel();
-                    wheel.GwGr = gwgr;
-                    car.Wheels.Add(wheel);
+                    gwgr = int.Parse(line);
                     continue;
                 }
                 if(line.StartsWith("rims("))
                 {
                     //rims(r,g,b,size,depth)
-                    if (wheel is null) throw new FormatException();
                     line = line.Slice("rims(".Length);
                     Color c = new Color();
                     ReadOnlySpan<char> r = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
@@ -291,21 +291,20 @@ namespace NFMRadTools.Editing
                     c.R = r.IsWhiteSpace() ? (byte)0 : iR > byte.MaxValue ? byte.MaxValue : (byte)iR;
                     c.G = g.IsWhiteSpace() ? (byte)0 : iG > byte.MaxValue ? byte.MaxValue : (byte)iG;
                     c.B = b.IsWhiteSpace() ? (byte)0 : iB > byte.MaxValue ? byte.MaxValue : (byte)iB;
-                    wheel.RimsColor = c;
+                    rimColor = c;
                     line = line.Slice(indexOfSecondComma + 1);
                     int indexOfThirdComma = line.IndexOf(',');
                     ReadOnlySpan<char> size = line.Slice(indexOfThirdComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfThirdComma + 1));
                     int iSize = int.Parse(size);
-                    wheel.RimSize = iSize;
+                    rimSize = iSize;
                     line = line.Slice(indexOfThirdComma + 1);
                     int indexOfFourthComma = line.IndexOf(",");
                     ReadOnlySpan<char> depth = line.Slice(indexOfFourthComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFourthComma + 1));
-                    wheel.RimDepth = int.Parse(depth);
+                    rimDepth = int.Parse(depth);
                     continue;
                 }
                 if(line.StartsWith("w("))
                 {
-                    if (wheel is null) throw new FormatException();
                     //w(x,y,z,steer,width,height)
                     line = line.Slice("w(".Length);
                     ReadOnlySpan<char> x = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
@@ -328,14 +327,18 @@ namespace NFMRadTools.Editing
                     int indexOfFifthComma = line.IndexOf(',');
                     ReadOnlySpan<char> height = line.Slice(indexOfFifthComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFifthComma + 1));
                     int iHeight = int.Parse(height);
-                    Wheel.Instance wheelInstance = new Wheel.Instance();
-                    wheelInstance.X = iX;
-                    wheelInstance.Y = iY;
-                    wheelInstance.Z = iZ;
-                    wheelInstance.CanSteer = iSteer != 0;
-                    wheelInstance.Width = iWidth;
-                    wheelInstance.Height = iHeight;
-                    wheel.Instances.Add(wheelInstance);
+                    Wheel wheel = new Wheel();
+                    wheel.X = iX;
+                    wheel.Y = iY;
+                    wheel.Z = iZ;
+                    wheel.CanSteer = iSteer != 0;
+                    wheel.Width = iWidth;
+                    wheel.Height = iHeight;
+                    wheel.GwGr = gwgr;
+                    wheel.RimColor = rimColor;
+                    wheel.RimDepth = rimDepth;
+                    wheel.RimSize = rimSize;
+                    car.Wheels.Add(wheel);
                     continue;
                 }
                 if(currentGroup is null || currentPoly is null)
@@ -395,13 +398,29 @@ namespace NFMRadTools.Editing
 
             enumerable = PolyGroups.Where(x => x.Mode == PolyGroupMode.PhyrexianWheel);
             bool hasPhyWheels = enumerable.Any();
-            foreach (Wheel wheel in Wheels)
+            foreach (IGrouping<Wheel.Definition, Wheel> wheelGroup in Wheels.GroupBy(x => x.GetDefinition()))
             {
-                sb.Append(wheel.ToString());
-                if (hasPhyWheels) sb.Append("c");
-                sb.AppendLine();
-            }
-
+                Wheel.Definition def = wheelGroup.Key;
+                sb.Append("gwgr(").Append(def.GwGr).AppendLine(")");
+                sb.Append("rims(")
+                    .Append(def.RimColor.ToString())
+                    .Append(",").Append(def.RimSize)
+                    .Append(",").Append(def.RimDepth)
+                    .AppendLine(")");
+                foreach(Wheel wheel in wheelGroup)
+                {
+                    sb.Append("w(")
+                        .Append(wheel.X)
+                        .Append(",").Append(wheel.Y)
+                        .Append(",").Append(wheel.Z)
+                        .Append(",").Append(wheel.CanSteer ? "11" : "0")
+                        .Append(",").Append(wheel.Width)
+                        .Append(",").Append(wheel.Height)
+                        .Append(")");
+                    if (hasPhyWheels) sb.Append("c");
+                    sb.AppendLine();
+                }
+            } 
             
             if(hasPhyWheels)
             {

@@ -3,9 +3,11 @@ using NFMRadTools.Utilities;
 using NFMRadTools.Utilities.Importing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -218,6 +220,7 @@ namespace NFMRadTools.Commanding
             if(carNameIsPath) filePath = CarName;
             else filePath = Path.Combine(Program.CarDirectory, $"{CarName}{Program.NFMCarExtension}");
             File.WriteAllText(filePath, Program.CurrentCar.ToString());
+            Program.CurrentCar.LoadedFromFile = filePath;
             Logger.Info($"Car saved: \"{filePath}\".");
         }
 
@@ -540,6 +543,13 @@ namespace NFMRadTools.Commanding
             Scans the colors of all polygons and sets 1st and 2nd color based on the 2 most common colors based on given mode.
             =Inputs=
             AutoColoringMode Mode (optional) - Mode which determins how the algorythm decides what colors are used the most.
+            =Remarks=
+            Available coloring modes:
+            Polygons - Scans colors based on number of polygons.
+            Vertices - Scans colors based on number of vertices.
+            Bounds - Scans colors based on the volume of the bounding box that encapsulates all polygons of given color.
+            Edge - Scanes colors based on length of edges.
+            Surface - Currently not implemented. Scans colors based on surface area of polygons.
             """)]
         public static void AutoSetCarColors(AutoColoringMode Mode = AutoColoringMode.Polygons)
         {
@@ -659,6 +669,57 @@ namespace NFMRadTools.Commanding
                         Logger.Info($"First color was set to ({c1}) - {c1Volume} units of volume, Second color was set to ({c2}) - {c2Volume} units of volume.");
                         return;
                     }
+                case AutoColoringMode.Edge:
+                    {
+                        Dictionary<Color, double> d = new Dictionary<Color, double>();
+                        foreach (PolyGroup g in groups)
+                        {
+                            foreach (Polygon p in g.Polygons)
+                            {
+                                Color c = p.Color;
+                                double edgeLength = 0.0;
+                                for(int i = 0; i < p.Vertices.Count; i++)
+                                {
+                                    Vector3D vCurrent = (Vector3D)p.Vertices[i];
+                                    Vector3D vNext = (Vector3D)p.Vertices[(i + 1) % p.Vertices.Count];
+                                    edgeLength += Vector3D.Length(Vector3D.Distance(vCurrent, vNext));
+                                }
+                                if (d.TryGetValue(c, out double len))
+                                {
+                                    d[c] = len + edgeLength;
+                                }
+                                else
+                                {
+                                    d.Add(c, edgeLength);
+                                }
+                            }
+                        }
+                        Color c1 = new Color();
+                        double c1Len = 0;
+                        Color c2 = new Color();
+                        double c2Len = 0;
+                        foreach (KeyValuePair<Color, double> entry in d)
+                        {
+                            if (entry.Value > c1Len)
+                            {
+                                c2 = c1;
+                                c2Len = c1Len;
+                                c1 = entry.Key;
+                                c1Len = entry.Value;
+                                continue;
+                            }
+                            if (entry.Value > c2Len)
+                            {
+                                c2 = entry.Key;
+                                c2Len = entry.Value;
+                                continue;
+                            }
+                        }
+                        Program.CurrentCar.FirstColor = c1;
+                        Program.CurrentCar.SecondColor = c2;
+                        Logger.Info($"First color was set to ({c1}) - {c1Len} units, Second color was set to ({c2}) - {c2Len} units.");
+                        return;
+                    }
                 case AutoColoringMode.SurfaceArea:
                     {
                         /*Dictionary<Color, double> d = new Dictionary<Color, double>();
@@ -752,7 +813,7 @@ namespace NFMRadTools.Commanding
                 Logger.Error($"File: \"{File}\" is not supported for importing.");
                 return;
             }
-            NFMCar importedCar = null;
+            IntermediateCarModel importedCar = null;
             try
             {
                 importedCar = imp.ImportCar(File, Scale);
@@ -778,24 +839,58 @@ namespace NFMRadTools.Commanding
                         goto case ImportMode.New;
                     }
                     Logger.Info("Merging cars.");
-                    foreach(PolyGroup g in importedCar.PolyGroups)
-                    {
-                        PolyGroup other = Program.CurrentCar.PolyGroups.FirstOrDefault(x => x.Name == g.Name && x.Mode == x.Mode);
-                        if(other is null)
-                        {
-                            Program.CurrentCar.PolyGroups.Add(g);
-                            continue;
-                        }
-                        other.AddPolygons(g.Polygons);
-                    }
+                    importedCar.MergeWithNFMCar(Program.CurrentCar);
                     Logger.Info("Merging complete.");
                     break;
                 case ImportMode.New:
-                    Program.CurrentCar = importedCar;
+                    Logger.Info("Converting to NFM car.");
+                    Program.CurrentCar = importedCar.ConvertToNFMCar();
+                    Program.CurrentCar.LoadedFromFile = Path.GetFileNameWithoutExtension(File);
                     break;
             }
             Logger.Info("Finished importing.");
             return;
+        }
+
+        [Command(CommandName = "clipboard", VerifyCarLoaded = true)]
+        [Description("""
+            Copies the current car code into the clipboard.
+            =Remarks=
+            Requires privilidge to start external processes.
+            On linux xclip is required aswell for clipboard to work.
+            Otherwise use print command to get the car code or save to save car code to file.
+            """)]
+        public static void Clipboard()
+        {
+            ProcessStartInfo psi = null;
+            if(OperatingSystem.IsWindows())
+            {
+                psi = new ProcessStartInfo("cmd", "/c clip");
+            }
+            else if(OperatingSystem.IsLinux())
+            {
+                psi = new ProcessStartInfo("xclip", "-selection clipboard");
+            }
+            if (psi is null)
+            {
+                Logger.Error($"Clipboard is currently not supported on \"{Environment.OSVersion.ToString()}\"");
+                return;
+            }
+            psi.RedirectStandardInput = true;
+            psi.UseShellExecute = false;
+            string code = Program.CurrentCar.ToString();
+            using (Process proc = Process.Start(psi))
+            {
+                if(proc is null)
+                {
+                    Logger.Error($"Failed to start application \"{psi.FileName}\".");
+                    return;
+                }
+                proc.StandardInput.Write(code);
+                proc.StandardInput.Close();
+                proc.WaitForExit();
+            }
+            Logger.Info("Car code was copied to clipboard.");
         }
     }
 }

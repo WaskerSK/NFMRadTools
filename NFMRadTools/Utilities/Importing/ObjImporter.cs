@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,7 +16,7 @@ namespace NFMRadTools.Utilities.Importing
         private const double ImportScaleConversionConstant = 10.0;
         public ObjImporter() { }
 
-        public override NFMCar ImportCar(string filename, double importScale = 1.0)
+        public override IntermediateCarModel ImportCar(string filename, double importScale = 1.0)
         {
             Debug.Assert(filename is not null);
             Debug.Assert(filename.EndsWith(".obj", StringComparison.OrdinalIgnoreCase));
@@ -33,60 +35,72 @@ namespace NFMRadTools.Utilities.Importing
                 Logger.Error("Tried to load empty file.");
                 return null;
             }
-            Dictionary<string, ObjMesh> meshes = new Dictionary<string, ObjMesh>();
+            Dictionary<string, IntermediateMesh> meshes = new Dictionary<string, IntermediateMesh>();
             OptimizedStringReader sr = new OptimizedStringReader(objData);
-            ObjMesh currentMesh = null;
-            Dictionary<string, ObjMaterial> materials = new Dictionary<string, ObjMaterial>();
-            ObjMaterial currentMat = null;
+            IntermediateMesh currentMesh = null;
+            Dictionary<string, IntermediateMaterial> materials = new Dictionary<string, IntermediateMaterial>();
+            IntermediateMaterial currentMat = null;
+            int indexesEncountered = 0;
             while (!sr.EndOfString())
             {
                 ReadOnlySpan<char> line = sr.ReadLine();
                 line = line.TrimStart();
                 if (line.IsEmpty || line.IsWhiteSpace()) continue;
                 if (line.StartsWith("#")) continue;
-                if (line.StartsWith("v"))
+                if (line.StartsWith("v "))
                 {
                     if (currentMesh is null) throw new FormatException();
                     line = line.Slice(1).Trim();
                     int indexOfFirstSpace = line.IndexOf(' ');
-                    double x = double.Parse(line.Slice(0, indexOfFirstSpace + 1));
+                    double x = double.Parse(line.Slice(0, indexOfFirstSpace + 1), CultureInfo.InvariantCulture);
                     line = line.Slice(indexOfFirstSpace + 1).TrimStart();
                     int indexOfSecondSpace = line.IndexOf(" ");
-                    double y = double.Parse(line.Slice(0, indexOfSecondSpace + 1));
+                    double y = double.Parse(line.Slice(0, indexOfSecondSpace + 1), CultureInfo.InvariantCulture);
                     line = line.Slice(indexOfSecondSpace + 1).TrimStart();
-                    double z = double.Parse(line);
+                    double z = double.Parse(line, CultureInfo.InvariantCulture);
                     x = x * ImportScaleConversionConstant * importScale;
                     y = y * ImportScaleConversionConstant * importScale;
                     z = z * ImportScaleConversionConstant * importScale;
                     currentMesh.Vertices.Add(new Vector3D(x,y,z));
                     continue;
                 }
-                if(line.StartsWith("f"))
+                if(line.StartsWith("f "))
                 {
                     if(currentMesh is null) throw new FormatException();
                     line = line.Slice(1).TrimStart();
                     if (line.IsEmpty || line.IsWhiteSpace()) throw new FormatException();
-                    ObjFace face = new ObjFace();
+                    IntermediateFace face = new IntermediateFace();
                     while(true)
                     {
                         ReadOnlySpan<char> indexChars = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
                         if(!int.TryParse(indexChars, out int index)) throw new FormatException();
-                        if((uint)index >= (uint)currentMesh.Vertices.Count) throw new FormatException();
+                        index -= 1; // for some reasons in obj indexes are not 0 based??
+                        index -= indexesEncountered; //for some reason obj does not reset vertex index on new object definition?? peak stupidity
+                        if((uint)index >= (uint)currentMesh.Vertices.Count)
+                            throw new FormatException();
                         face.Indexes.Add(index);
                         int indexOfSpace = line.IndexOf(' ');
                         if (indexOfSpace < 0) break;
                         line = line.Slice(indexOfSpace).TrimStart();
                     }
                     if (!face.Indexes.Any()) throw new FormatException();
+                    if(currentMat is null)
+                    {
+                        currentMat = new IntermediateMaterial();
+                        currentMat.Name = RandomName.Get();
+                    }
+                    face.Material = currentMat;
                     currentMesh.Faces.Add(face);
                     continue;
                 }
-                if (line.StartsWith("o"))
+                if (line.StartsWith("o "))
                 {
                     line = line.Slice(1).Trim();
                     string mesh = line.ToString();
                     if (meshes.ContainsKey(mesh)) throw new FormatException("File contains identical mesh names.");
-                    currentMesh = new ObjMesh();
+                    if (currentMesh is not null)
+                        indexesEncountered += currentMesh.Vertices.Count;
+                    currentMesh = new IntermediateMesh();
                     currentMesh.Name = mesh;
                     meshes.Add(mesh, currentMesh);
                     currentMat = null;
@@ -120,44 +134,47 @@ namespace NFMRadTools.Utilities.Importing
                                 Logger.Warning("Tried to read empty material file.");
                                 continue;
                             }
+                            IntermediateMaterial mt = null;
                             OptimizedStringReader mr = new OptimizedStringReader(mtlData);
-                            ReadOnlySpan<char> mLine = sr.ReadLine();
-                            mLine = mLine.TrimStart();
-                            ObjMaterial mt = null;
-                            if (mLine.IsEmpty || mLine.IsWhiteSpace()) continue;
-                            if (mLine.StartsWith("newmtl"))
+                            while(!mr.EndOfString())
                             {
-                                mLine = mLine.Slice("newmtl".Length).Trim();
-                                string n = null;
-                                if (mLine.IsEmpty || mLine.IsWhiteSpace())
+                                ReadOnlySpan<char> mLine = mr.ReadLine();
+                                mLine = mLine.TrimStart();
+                                if (mLine.IsEmpty || mLine.IsWhiteSpace()) continue;
+                                if (mLine.StartsWith("newmtl"))
                                 {
-                                    n = RandomName.Get();
+                                    mLine = mLine.Slice("newmtl".Length).Trim();
+                                    string n = null;
+                                    if (mLine.IsEmpty || mLine.IsWhiteSpace())
+                                    {
+                                        n = RandomName.Get();
+                                    }
+                                    else n = mLine.ToString();
+                                    mt = new IntermediateMaterial();
+                                    mt.Name = n;
+                                    materials.Add(n, mt);
+                                    continue;
                                 }
-                                else n = mLine.ToString();
-                                mt = new ObjMaterial();
-                                mt.Name = n;
-                                materials.Add(n, mt);
-                                continue;
-                            }
-                            if (mLine.StartsWith("Kd"))
-                            {
-                                if (mt is null) continue;
-                                mLine = mLine.Slice(2).TrimStart();
-                                int indexOfSpace = mLine.IndexOf(' ');
-                                ReadOnlySpan<char> r = mLine.Slice(0, indexOfSpace);
-                                mLine = mLine.Slice(indexOfSpace).TrimStart();
-                                indexOfSpace = mLine.IndexOf(' ');
-                                ReadOnlySpan<char> g = mLine.Slice(0, indexOfSpace);
-                                mLine = mLine.Slice(indexOfSpace).Trim();
-                                ReadOnlySpan<char> b = mLine;
-                                double dR = double.Parse(r);
-                                double dG = double.Parse(g);
-                                double dB = double.Parse(b);
-                                byte R = (byte)(byte.MaxValue * dR);
-                                byte G = (byte)(byte.MaxValue * dG);
-                                byte B = (byte)(byte.MaxValue * dB);
-                                mt.Color = new Color(R,G,B);
-                                continue;
+                                if (mLine.StartsWith("Kd"))
+                                {
+                                    if (mt is null) continue;
+                                    mLine = mLine.Slice(2).TrimStart();
+                                    int indexOfSpace = mLine.IndexOf(' ');
+                                    ReadOnlySpan<char> r = mLine.Slice(0, indexOfSpace);
+                                    mLine = mLine.Slice(indexOfSpace).TrimStart();
+                                    indexOfSpace = mLine.IndexOf(' ');
+                                    ReadOnlySpan<char> g = mLine.Slice(0, indexOfSpace);
+                                    mLine = mLine.Slice(indexOfSpace).Trim();
+                                    ReadOnlySpan<char> b = mLine;
+                                    double dR = double.Parse(r, CultureInfo.InvariantCulture);
+                                    double dG = double.Parse(g, CultureInfo.InvariantCulture);
+                                    double dB = double.Parse(b, CultureInfo.InvariantCulture);
+                                    byte R = (byte)(byte.MaxValue * dR);
+                                    byte G = (byte)(byte.MaxValue * dG);
+                                    byte B = (byte)(byte.MaxValue * dB);
+                                    mt.Color = new Color(R, G, B);
+                                    continue;
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -172,45 +189,23 @@ namespace NFMRadTools.Utilities.Importing
                 {
                     if (currentMesh is null) throw new FormatException();
                     line = line.Slice("usemtl".Length).Trim();
-                    if(!materials.TryGetValue(line.ToString(), out ObjMaterial m)) throw new FormatException();
+                    if(!materials.TryGetValue(line.ToString(), out IntermediateMaterial m)) throw new FormatException();
                     currentMat = m;
                     continue;
                 }
             }
-            /*foreach(var entry in meshes)
+            IntermediateCarModel model = new IntermediateCarModel();
+            model.Meshes.EnsureCapacity(meshes.Count);
+            foreach(var entry in meshes)
             {
-                if(entry.Value.Name.StartsWith("dsw-"))
-            }*/
-            throw new NotImplementedException();
+                model.Meshes.Add(entry.Value);
+            }
+            return FinalizeImport(model);
         }
 
         public override bool SupportsExtension(string extension)
         {
             return string.Equals(extension, "obj", StringComparison.OrdinalIgnoreCase) || string.Equals(extension, ".obj", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private class ObjMesh
-        {
-            internal string Name;
-            internal List<Vector3D> Vertices = new List<Vector3D>();
-            internal List<ObjFace> Faces = new List<ObjFace>();
-        }
-
-        private class ObjFace
-        {
-            internal List<int> Indexes;
-            internal ObjMaterial material;
-
-            internal ObjFace()
-            {
-                Indexes = new List<int>();
-            }
-        }
-
-        private class ObjMaterial
-        {
-            internal string Name;
-            internal Color Color;
         }
     }
 }
