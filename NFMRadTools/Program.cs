@@ -63,7 +63,7 @@ namespace NFMRadTools
                     }
                     if (command.HasArgs)
                     {
-                        if(command.Name == "?")
+                        if(command.Name == "?" && s.AsSpan().TrimStart()[0] != '?')
                         {
                             command.Execute(s.AsSpan().Trim().Slice(0, s.Length - 1).Trim().ToString());
                         }
