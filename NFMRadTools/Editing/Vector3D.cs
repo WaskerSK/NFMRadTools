@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NFMRadTools.Utilities
+namespace NFMRadTools.Editing
 {
     public readonly struct Vector3D : IEquatable<Vector3D>
     {
@@ -96,5 +96,6 @@ namespace NFMRadTools.Utilities
         public static double Min(Vector3D Value) => double.Min(Value.X, double.Min(Value.Y, Value.Z));
         public static double Length(Vector3D Value) => double.Sqrt(Sum(Value * Value));
         public static Vector3D Mid(Vector3D A, Vector3D B) => A + Distance(A, B) / new Vector3D(2.0);
+        public static Vector3D Cross(Vector3D A, Vector3D B) => new Vector3D(A.Y * B.Z - A.Z * B.Y, A.Z * B.X - A.X * B.Z, A.X * B.Y - A.Y * B.X);
     }
 }

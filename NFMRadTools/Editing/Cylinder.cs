@@ -1,11 +1,10 @@
-﻿using NFMRadTools.Editing;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NFMRadTools.Utilities
+namespace NFMRadTools.Editing
 {
     public readonly struct Cylinder
     {
@@ -34,7 +33,7 @@ namespace NFMRadTools.Utilities
             w.Height = NFMCorrectedRadius;
             w.Width = NFMCorrectedWidth;
             w.RimDepth = 0;
-            w.RimSize = (int)((Radius / 2 * (40.0 / 36.0)) * 0.7);
+            w.RimSize = (int)(Radius / 2 * (40.0 / 36.0) * 0.7);
             return w;
         }
 
