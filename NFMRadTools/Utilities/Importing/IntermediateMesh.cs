@@ -37,7 +37,7 @@ namespace NFMRadTools.Utilities.Importing
             }
             Vector3D minV = new Vector3D(minX, minY, minZ);
             Vector3D maxV = new Vector3D(maxX, maxY, maxZ);
-            Vector3D location = Vector3D.Mid(minV, maxV);
+            Vector3D location = Vector3D.PerAxisMid(minV, maxV);
             Vector3D fminV = minV * Vector3D.VectorYZ;
             Vector3D fmaxV = maxV * Vector3D.VectorYZ;
             Vector3D fLoc = location * Vector3D.VectorYZ;

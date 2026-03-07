@@ -97,5 +97,11 @@ namespace NFMRadTools.Editing
         public static double Length(Vector3D Value) => double.Sqrt(Sum(Value * Value));
         public static Vector3D Mid(Vector3D A, Vector3D B) => A + Distance(A, B) / new Vector3D(2.0);
         public static Vector3D Cross(Vector3D A, Vector3D B) => new Vector3D(A.Y * B.Z - A.Z * B.Y, A.Z * B.X - A.X * B.Z, A.X * B.Y - A.Y * B.X);
+        public static Vector3D PerAxisMid(Vector3D A, Vector3D B)
+        {
+            return new Vector3D(A.X  + double.Abs(A.X - B.X),
+                A.Y + double.Abs(A.Y - B.Y),
+                A.Z + double.Abs(A.Z - B.Z));
+        }
     }
 }
