@@ -202,12 +202,12 @@ namespace NFMRadTools.Commanding
                     return;
                 }
                 CarName = Program.CurrentCar.LoadedFromFile;
-                if (!CarName.EndsWith(".rad"))
+                if(Path.HasExtension(CarName))
                 {
                     CarName = Path.ChangeExtension(CarName, "rad");
-                    carNameIsPath = false;
+                    carNameIsPath = true;
                 }
-                else carNameIsPath = true;
+                else carNameIsPath = false;
             }
             if(!carNameIsPath)
             {
