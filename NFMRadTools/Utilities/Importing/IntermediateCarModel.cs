@@ -42,7 +42,7 @@ namespace NFMRadTools.Utilities.Importing
                         }
                         hasSeenDragShotWheel = true;
                         Wheel dsWheelVanillaDef = GetWheel(cylinder, mesh.WheelDefinition);
-                        other.DragShotWheelDefinition.Radius = (int)cylinder.Radius;
+                        other.DragShotWheelDefinition.Radius = (int)cylinder.NFMCorrectedRadius;
                         other.DragShotWheelDefinition.Depth = int.Abs(dsWheelVanillaDef.Width);
                         other.Wheels.Add(dsWheelVanillaDef);
                         break;

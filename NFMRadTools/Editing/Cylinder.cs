@@ -12,7 +12,10 @@ namespace NFMRadTools.Editing
         //public Vector3D Origin { get; }
         public double Radius { get; }
         public double Width { get; }
-        //Cylinders are only used for wheels currently hence no rotation is required.
+        
+        public double NFMCorrectedRadius { get; }
+        public double NFMCorrectedWheelRadius { get; }
+        public double NFMCorrectedWidth { get; }
 
         public Cylinder(Vector3D location, /*Vector3D origin,*/ double radius, double width)
         {
@@ -20,6 +23,15 @@ namespace NFMRadTools.Editing
             //Origin = origin;
             Radius = radius;
             Width = width;
+            NFMCorrectedWheelRadius = Radius * (50.0 / 60.0);
+            double adjustScale = 1.0;
+            if(NFMCorrectedWheelRadius > 46.0)
+            {
+                adjustScale = 46.0 / NFMCorrectedWheelRadius;
+                NFMCorrectedWheelRadius = NFMCorrectedWheelRadius * adjustScale;
+            }
+            NFMCorrectedRadius = Radius * adjustScale;
+            NFMCorrectedWidth = (Width * 1.25) * (Location.X >= 0 ? -1 : 1);
         }
 
         public Wheel ConvertToNFMWheel()
@@ -30,14 +42,11 @@ namespace NFMRadTools.Editing
             w.Z = (int)Location.Z;
             w.CanSteer = Location.Z >= 0;
             w.GwGr = 0;
-            w.Height = NFMCorrectedRadius;
-            w.Width = NFMCorrectedWidth;
+            w.Height = (int)NFMCorrectedWheelRadius;
+            w.Width = (int)NFMCorrectedWidth;
             w.RimDepth = 0;
-            w.RimSize = (int)(Radius * (50.0 / 60.0) * 0.7);
+            w.RimSize = (int)(NFMCorrectedWheelRadius * 0.7);
             return w;
         }
-
-        public int NFMCorrectedRadius => (int)(Radius * (50.0 / 60.0));
-        public int NFMCorrectedWidth => (int)(Width * 1.25) * ((int)Location.X >= 0 ? -1 : 1);
     }
 }

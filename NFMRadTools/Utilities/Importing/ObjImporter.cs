@@ -169,6 +169,9 @@ namespace NFMRadTools.Utilities.Importing
                                     double dR = double.Parse(r, CultureInfo.InvariantCulture);
                                     double dG = double.Parse(g, CultureInfo.InvariantCulture);
                                     double dB = double.Parse(b, CultureInfo.InvariantCulture);
+                                    dR = ColorEditing.LinearsRGBTosRGB(dR);
+                                    dG = ColorEditing.LinearsRGBTosRGB(dG);
+                                    dB = ColorEditing.LinearsRGBTosRGB(dB);
                                     byte R = (byte)(byte.MaxValue * dR);
                                     byte G = (byte)(byte.MaxValue * dG);
                                     byte B = (byte)(byte.MaxValue * dB);
