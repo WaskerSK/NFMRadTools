@@ -83,7 +83,7 @@ namespace NFMRadTools.Utilities.Importing
                         vertex.Z = (int)v.Z;
                         p.Vertices.Add(vertex);
                     }
-                    if(mesh.Mode == IntermediateMeshMode.DragShotWheel)
+                    if(mesh.Mode == IntermediateMeshMode.DragShotWheel || mesh.Mode == IntermediateMeshMode.PhyrexianWheel)
                     {
                         for(int i = p.Vertices.Count - 1; i >= 0; i--)
                         {
