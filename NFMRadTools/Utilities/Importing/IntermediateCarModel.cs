@@ -87,7 +87,8 @@ namespace NFMRadTools.Utilities.Importing
                         for(int i = p.Vertices.Count - 1; i >= 0; i--)
                         {
                             Vertex current = p.Vertices[i];
-                            Vertex prev = p.Vertices[(i - 1) % p.Vertices.Count];
+                            int j = i - 1;
+                            Vertex prev = p.Vertices[(j < 0 ? p.Vertices.Count - 1 : j)];
                             if(current == prev)
                             {
                                 p.Vertices.RemoveAt(i);
