@@ -28,7 +28,7 @@ namespace NFMRadTools.Editing
             w.X = (int)Location.X;
             w.Y = (int)Location.Y;
             w.Z = (int)Location.Z;
-            w.CanSteer = Location.Z < 0;
+            w.CanSteer = Location.Z >= 0;
             w.GwGr = 0;
             w.Height = NFMCorrectedRadius;
             w.Width = NFMCorrectedWidth;
