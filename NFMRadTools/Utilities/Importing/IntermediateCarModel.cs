@@ -42,8 +42,8 @@ namespace NFMRadTools.Utilities.Importing
                         }
                         hasSeenDragShotWheel = true;
                         Wheel dsWheelVanillaDef = GetWheel(cylinder, mesh.WheelDefinition);
-                        other.DragShotWheelDefinition.Radius = dsWheelVanillaDef.Height;
-                        other.DragShotWheelDefinition.Depth = dsWheelVanillaDef.Width;
+                        other.DragShotWheelDefinition.Radius = (int)cylinder.Radius;
+                        other.DragShotWheelDefinition.Depth = int.Abs(dsWheelVanillaDef.Width);
                         other.Wheels.Add(dsWheelVanillaDef);
                         break;
                     case IntermediateMeshMode.PhyrexianWheel:

@@ -33,7 +33,7 @@ namespace NFMRadTools.Editing
             w.Height = NFMCorrectedRadius;
             w.Width = NFMCorrectedWidth;
             w.RimDepth = 0;
-            w.RimSize = (int)(Radius / 2 * (40.0 / 36.0) * 0.7);
+            w.RimSize = (int)(Radius / 2 * (36.0 / 40.0) * 0.7);
             return w;
         }
 
