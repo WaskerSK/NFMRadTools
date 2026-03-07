@@ -1,5 +1,6 @@
 ﻿using NFMRadTools.Utilities;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -47,5 +48,104 @@ namespace System
             return i;
         }
         #endregion
+
+        #region Enumerable
+        public static IEnumerable<T> Interlace<T>(this IEnumerable<T> left, IEnumerable<T> right) => new InterlaceEnumerable<T>(left, right);
+
+        private class InterlaceEnumerable<T> : IEnumerable<T>
+        {
+            private IEnumerable<T> left;
+            private IEnumerable<T> right;
+
+            public InterlaceEnumerable(IEnumerable<T> left, IEnumerable<T> right)
+            {
+                this.left = left;
+                this.right = right;
+            }
+
+            public IEnumerator<T> GetEnumerator()
+            {
+                return new InterlaceEnumerator(this);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            private class InterlaceEnumerator : IEnumerator<T>
+            {
+                private InterlaceEnumerable<T> owner;
+                private IEnumerator<T> left;
+                private IEnumerator<T> right;
+                private IEnumerator<T> current;
+                private IEnumerator<T> next;
+
+                public T Current => current.Current;
+
+                object IEnumerator.Current => Current;
+
+                public InterlaceEnumerator(InterlaceEnumerable<T> interlace)
+                {
+                    owner = interlace;
+                    if (owner is not null)
+                    {
+                        if (owner.left is not null) left = owner.left.GetEnumerator();
+                        if (owner.right is not null) right = owner.right.GetEnumerator();
+                    }
+                    current = right;
+                    next = left;
+                }
+
+                public bool MoveNext()
+                {
+                    if (next is null)
+                    {
+                        if (current is null) return false;
+                        return current.MoveNext();
+                    }
+                    if (current is null)
+                    {
+                        if (next is null) return false;
+                        current = next;
+                        next = null;
+                        return current.MoveNext();
+                    }
+                    SwapCurrent();
+                    if (current.MoveNext()) return true;
+                    SwapCurrent();
+                    return current.MoveNext();
+                }
+
+                public void Dispose()
+                {
+                    if (left is not null) left.Dispose();
+                    if (right is not null) right.Dispose();
+                    owner = null;
+                    right = null;
+                    left = null;
+                    current = null;
+                    next = null;
+                }
+
+                public void Reset()
+                {
+                    if (left is not null) left.Reset();
+                    if (right is not null) right.Reset();
+                    current = right;
+                    next = left;
+                }
+
+                private void SwapCurrent()
+                {
+                    var temp = current;
+                    current = next;
+                    next = temp;
+                }
+            }
+        }
+        #endregion
+
+
     }
 }

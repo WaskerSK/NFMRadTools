@@ -1,6 +1,7 @@
 ﻿using NFMRadTools.Utilities;
 using NFMRadTools.Utilities.Macros;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
@@ -20,6 +21,9 @@ namespace NFMRadTools.Editing
         public List<string> Metadata { get; }
         public List<PolyGroup> PolyGroups { get; }
         public List<Wheel> Wheels { get; }
+        public Stats? Stats { get; set; }
+        public Physics? Physics { get; set; }
+        public int? Handling { get; set; }
 
         public DragShotWheelDefinition DragShotWheelDefinition { get; }
 
@@ -341,6 +345,80 @@ namespace NFMRadTools.Editing
                     car.Wheels.Add(wheel);
                     continue;
                 }
+                if(line.StartsWith("stat("))
+                {
+                    Stats stats = new Stats();
+                    line = line.Slice("stat(".Length);
+                    int[] arr = ArrayPool<int>.Shared.Rent(5);
+                    try
+                    {
+                        int indexOfComma = -1;
+                        for (int i = 0; i < 5; i++)
+                        {
+                            line = line.Slice(indexOfComma + 1);
+                            int value = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                            arr[i] = value;
+                            indexOfComma = line.IndexOf(',');
+                        }
+                        stats.Speed = arr[0];
+                        stats.Acceleration = arr[1];
+                        stats.Stunts = arr[2];
+                        stats.Strength = arr[3];
+                        stats.Endurance = arr[4];
+                    }
+                    finally
+                    {
+                        ArrayPool<int>.Shared.Return(arr);
+                    }
+                    car.Stats = stats;
+                    continue;
+                }
+                if(line.StartsWith("physics("))
+                {
+                    Physics phys = new Physics();
+                    line = line.Slice("physics(".Length);
+                    int[] arr = ArrayPool<int>.Shared.Rent(16);
+                    try
+                    {
+                        int indexOfComma = -1;
+                        for (int i = 0; i < 16; i++)
+                        {
+                            line = line.Slice(indexOfComma + 1);
+                            int value = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                            arr[i] = value;
+                            indexOfComma = line.IndexOf(',');
+                        }
+                        phys.Handbrake = arr[0];
+                        phys.TurningSensitivity = arr[1];
+                        phys.TireGrip = arr[2];
+                        phys.Bouncing = arr[3];
+                        phys.Unknown = arr[4];
+                        phys.LiftsOthers = arr[5];
+                        phys.GetsLifted = arr[6];
+                        phys.PushesOthers = arr[7];
+                        phys.GetsPushed = arr[8];
+                        phys.AerialRotationSpeed = arr[9];
+                        phys.AerialControlGliding = arr[10];
+                        phys.Radius = arr[11];
+                        phys.Magnitude = arr[12];
+                        phys.RoofDestruction = arr[13];
+                        phys.Engine = (Engine)arr[14];
+                        phys.Unknown2 = arr[15];
+                    }
+                    finally
+                    {
+                        ArrayPool<int>.Shared.Return(arr);
+                    }
+                    car.Physics = phys;
+                    continue;
+                }
+                if(line.StartsWith("handling("))
+                {
+                    line = line.Slice("handling(".Length);
+                    int handling = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    car.Handling = handling;
+                    continue;
+                }
                 if(currentGroup is null || currentPoly is null)
                 {
                     car.Metadata.Add(line.ToString());
@@ -360,6 +438,37 @@ namespace NFMRadTools.Editing
             return -1;
         }
 
+        public void SetDefaultCarPhysicProperties()
+        {
+            Stats = new Stats()
+            {
+                Speed = 87,
+                Acceleration = 123,
+                Stunts = 120,
+                Strength = 197,
+                Endurance = 153
+            };
+            Physics = new Physics()
+            {
+                Handbrake = 100,
+                TurningSensitivity = 78,
+                TireGrip = 90,
+                Bouncing = 24,
+                Unknown = 50,
+                LiftsOthers = 90,
+                GetsLifted = 0,
+                PushesOthers = 12,
+                GetsPushed = 0,
+                AerialRotationSpeed = 68,
+                AerialControlGliding = 24,
+                Radius = 100,
+                Magnitude = 78,
+                RoofDestruction = 0,
+                Engine = Engine.Normal,
+                Unknown2 = 86423
+            };
+            Handling = 100;
+        }
 
         public override string ToString()
         {
@@ -407,7 +516,11 @@ namespace NFMRadTools.Editing
                     .Append(",").Append(def.RimSize)
                     .Append(",").Append(def.RimDepth)
                     .AppendLine(")");
-                foreach(Wheel wheel in wheelGroup)
+                var sideGroups = wheelGroup.GroupBy(x => x.X >= 0);
+                IGrouping<bool, Wheel> leftWheels = sideGroups.FirstOrDefault(x => x.Key == false);
+                IGrouping<bool, Wheel> rightWheels = sideGroups.FirstOrDefault(x => x.Key == true);
+                if (leftWheels.Count() != rightWheels.Count()) throw new InvalidDataException("Wheel counts on left and right side do not match.");
+                foreach(Wheel wheel in leftWheels.OrderByDescending(x => x.Z).Interlace(rightWheels.OrderByDescending(x => x.Z)))
                 {
                     sb.Append("w(")
                         .Append(wheel.X)
@@ -420,10 +533,17 @@ namespace NFMRadTools.Editing
                     if (hasPhyWheels) sb.Append("c");
                     sb.AppendLine();
                 }
-            } 
+            }
+
+            if (Stats.HasValue || Physics.HasValue || Handling.HasValue)
+                sb.AppendLine();
+            if (Stats.HasValue) sb.AppendLine(Stats.Value.ToString());
+            if (Physics.HasValue) sb.AppendLine(Physics.Value.ToString());
+            if (Handling.HasValue) sb.AppendLine($"handling({Handling.Value})");
             
-            if(hasPhyWheels)
+            if (hasPhyWheels)
             {
+                sb.AppendLine();
                 var groups = enumerable.GroupBy(x => x.PhyrexianWheelIndex).OrderBy(x => x.Key);
                 foreach (var group in groups)
                 {

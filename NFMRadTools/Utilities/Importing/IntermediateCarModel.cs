@@ -15,6 +15,7 @@ namespace NFMRadTools.Utilities.Importing
         {
             NFMCar car = new NFMCar();
             MergeWithNFMCar(car);
+            car.SetDefaultCarPhysicProperties();
             return car;
         }
 

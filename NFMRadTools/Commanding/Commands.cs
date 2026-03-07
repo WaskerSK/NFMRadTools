@@ -849,6 +849,7 @@ namespace NFMRadTools.Commanding
                     Program.CurrentCar.LoadedFromFile = Path.GetFileNameWithoutExtension(File);
                     break;
             }
+            AutoSetCarColors(AutoColoringMode.Polygons);
             Logger.Info("Finished importing.");
             return;
         }

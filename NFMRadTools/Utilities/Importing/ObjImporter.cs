@@ -172,9 +172,9 @@ namespace NFMRadTools.Utilities.Importing
                                     dR = ColorEditing.LinearsRGBTosRGB(dR);
                                     dG = ColorEditing.LinearsRGBTosRGB(dG);
                                     dB = ColorEditing.LinearsRGBTosRGB(dB);
-                                    byte R = (byte)(byte.MaxValue * dR);
-                                    byte G = (byte)(byte.MaxValue * dG);
-                                    byte B = (byte)(byte.MaxValue * dB);
+                                    byte R = (byte)double.Round(byte.MaxValue * dR, MidpointRounding.AwayFromZero);
+                                    byte G = (byte)double.Round(byte.MaxValue * dG, MidpointRounding.AwayFromZero);
+                                    byte B = (byte)double.Round(byte.MaxValue * dB, MidpointRounding.AwayFromZero);
                                     mt.Color = new Color(R, G, B);
                                     continue;
                                 }
