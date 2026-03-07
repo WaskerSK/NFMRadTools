@@ -24,6 +24,20 @@ namespace NFMRadTools.Commanding
             {typeof(double), "double" },
             {typeof(decimal), "decimal" },
             {typeof(string), "string" },
+            {typeof(byte[]), "byte[]" },
+            {typeof(sbyte[]), "sbyte[]" },
+            {typeof(bool[]), "bool[]" },
+            {typeof(char[]), "char[]" },
+            {typeof(short[]), "short[]" },
+            {typeof(ushort[]), "ushort[]" },
+            {typeof(int[]), "int[]" },
+            {typeof(uint[]), "uint[]" },
+            {typeof(float[]), "float[]" },
+            {typeof(long[]), "long[]" },
+            {typeof(ulong[]), "ulong[]" },
+            {typeof(double[]), "double[]" },
+            {typeof(decimal[]), "decimal[]" },
+            {typeof(string[]), "string[]" }
         };
 
         public static void RegisterTypeName(Type type, string typeName)

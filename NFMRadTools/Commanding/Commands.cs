@@ -304,21 +304,29 @@ namespace NFMRadTools.Commanding
         [Description("""
             Sets the color of all polygons in the given poly group.
             =Inputs=
-            int GroupIndex - Zero based index of the poly group to which to apply the color.
+            int[] GroupIndexes - Zero based indexes of the poly groups to which to apply the color separated by ;.
             byte R - The red channel color value.
             byte G - The green channel color value.
             byte B - The blue channel color value.
             =Remarks=
             Use "car.groups.list" command to see group indexes.
             """)]
-        public static void SetGroupColor(int GroupIndex, byte R, byte G, byte B)
+        public static void SetGroupColor(int[] GroupIndexes, byte R, byte G, byte B)
         {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
             Color c = new Color();
             c.R = R;
             c.G = G;
             c.B = B;
-            Program.CurrentCar.PolyGroups[GroupIndex].SetColor(c);
-            Logger.Info($"Color of group [{GroupIndex}] was changed to {c.ToString()}.");
+            foreach(int GroupIndex in GroupIndexes)
+            {
+                Program.CurrentCar.PolyGroups[GroupIndex].SetColor(c);
+                Logger.Info($"Color of group [{GroupIndex}] was changed to {c.ToString()}.");
+            }
         }
 
         [Command(CommandName = "car.groups.removeempty", VerifyCarLoaded = true)]
@@ -341,18 +349,26 @@ namespace NFMRadTools.Commanding
         [Description("""
             Sets the fs(x) value for all polygons within a poly group.
             =Inputs=
-            int GroupIndex - Zero based index of the group to which to apply the value.
+            int[] GroupIndexes - Zero based indexes of the groups to which to apply the value separated by ;.
             int FsValue - The x value of fs(x).
             =Remarks=
             Use "car.groups.list" command to see group indexes.
             """)]
-        public static void SetGroupFs(int GroupIndex, int FsValue)
+        public static void SetGroupFs(int[] GroupIndexes, int FsValue)
         {
-            foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+            if (GroupIndexes.Length <= 0)
             {
-                p.Fs = FsValue;
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
             }
-            Logger.Info($"Value of \'fs\' has been set to {FsValue} for {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}].");
+            foreach(int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.Fs = FsValue;
+                }
+                Logger.Info($"Value of \'fs\' has been set to {FsValue} for {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}].");
+            }
         }
 
         [Command(CommandName = "car.setfs", VerifyCarLoaded = true)]
@@ -379,17 +395,25 @@ namespace NFMRadTools.Commanding
         [Description("""
             Removes the fs(x) value from all polygons within a poly group.
             =Inputs=
-            int GroupIndex - Zero based index of the group from which to remove the value.
+            int[] GroupIndexes - Zero based indexes of the groups from which to remove the value separated by ;.
             =Remarks=
             Use "car.groups.list" command to see group indexes.
             """)]
-        public static void RemoveGroupFs(int GroupIndex)
+        public static void RemoveGroupFs(int[] GroupIndexes)
         {
-            foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+            if (GroupIndexes.Length <= 0)
             {
-                p.Fs = null;
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
             }
-            Logger.Info($"Value of \'fs\' has been removed to from {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}].");
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.Fs = null;
+                }
+                Logger.Info($"Value of \'fs\' has been removed to from {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}].");
+            }
         }
 
         [Command(CommandName = "car.removefs", VerifyCarLoaded = true)]
@@ -434,38 +458,54 @@ namespace NFMRadTools.Commanding
         [Description("""
             Removes or adds noOutline attribute to all polygons within the given poly group.
             =Input=
-            int GroupIndex - Zero based index of the group.
+            int[] GroupIndexes - Zero based array of index of the groups separated by ;.
             bool Value - The bool value that indicates wether the car will have outlines.
             =Remarks=
             Use "car.groups.list" command to see group indexes.
             Use true if u want outline, otherwise false for no outline.
             """)]
-        public static void SetGroupOutline(int GroupIndex, bool Value)
+        public static void SetGroupOutline(int[] GroupIndexes, bool Value)
         {
-            foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+            if(GroupIndexes.Length <= 0)
             {
-                p.NoOutline = !Value;
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
             }
-            Logger.Info($"Value of \'noOutline\' has been {(!Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            foreach(int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.NoOutline = !Value;
+                }
+                Logger.Info($"Value of \'noOutline\' has been {(!Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
         }
 
         [Command(CommandName = "car.groups.setgr", VerifyCarLoaded = true)]
         [Description("""
             Sets or removes the gr(x) value from a poly group.
             =Inputs=
-            int GroupIndex = Zero based index of the group.
+            int[] GroupIndexes = Zero based indexes of the groups separated by ;.
             int Value - The x value of the gr(x).
             =Remarks=
             Use "car.groups.list" command to see group indexes.
             Use value of 0 to remove gr(x) attribute.
             """)]
-        public static void SetGroupGr(int GroupIndex, int Value)
+        public static void SetGroupGr(int[] GroupIndexes, int Value)
         {
-            foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+            if (GroupIndexes.Length <= 0)
             {
-                p.Gr = Value;
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
             }
-            Logger.Info($"Value of \'gr\' has been {(Value == 0 ? "removed from" : $"set to {Value} on")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.Gr = Value;
+                }
+                Logger.Info($"Value of \'gr\' has been {(Value == 0 ? "removed from" : $"set to {Value} on")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            } 
         }
 
         [Command(CommandName = "car.colors.get", VerifyCarLoaded = true)]

@@ -13,6 +13,8 @@ namespace NFMRadTools.Commanding
         private int currentStart;
         private int currentLength;
         private int ptr;
+        private char separator;
+        private bool anyWhitespace;
 
         public Argument Current
         {
@@ -32,6 +34,18 @@ namespace NFMRadTools.Commanding
             currentStart = 0;
             currentLength = 0;
             ptr = 0;
+            separator = ' ';
+            anyWhitespace = true;
+        }
+
+        public ArgumentEnumerator(string argsString, char argSeparator, bool anyWhitespace)
+        {
+            Source = argsString;
+            currentStart = 0;
+            currentLength = 0;
+            ptr = 0;
+            separator = argSeparator;
+            this.anyWhitespace = anyWhitespace;
         }
 
         public void Reset()
@@ -55,12 +69,24 @@ namespace NFMRadTools.Commanding
                 currentLength = 0;
                 return false;
             }
-            while (ptr < Source.Length)
+            if(anyWhitespace)
             {
-                if (!char.IsWhiteSpace(Source[ptr])) break;
-                ptr++;
+                while (ptr < Source.Length)
+                {
+                    if (!char.IsWhiteSpace(Source[ptr])) break;
+                    ptr++;
+                }
             }
-            if(ptr >= Source.Length)
+            else
+            {
+                while(ptr < Source.Length)
+                {
+                    if (Source[ptr] != separator) break;
+                    ptr++;
+                }
+            }
+
+            if (ptr >= Source.Length)
             {
                 currentStart = 0;
                 currentLength = 0;
@@ -88,15 +114,36 @@ namespace NFMRadTools.Commanding
             else //no whitespace arg
             {
                 currentStart = ptr;
-                while (ptr < Source.Length)
+                if(anyWhitespace)
                 {
-                    if (char.IsWhiteSpace(Source[ptr])) break;
-                    ptr++;
+                    while (ptr < Source.Length)
+                    {
+                        if (char.IsWhiteSpace(Source[ptr])) break;
+                        ptr++;
+                    }
                 }
+                else
+                {
+                    while (ptr < Source.Length)
+                    {
+                        if (Source[ptr] == separator) break;
+                        ptr++;
+                    }
+                }
+
                 if (ptr >= Source.Length) ptr = Source.Length;
                 currentLength = ptr - currentStart;
                 return true;
             }
+        }
+
+        public int ArgCount()
+        {
+            int count = 0;
+            ArgumentEnumerator copy = new ArgumentEnumerator(Source, separator, anyWhitespace);
+            while(copy.MoveNext())
+                count++;
+            return count;
         }
     }
 }
