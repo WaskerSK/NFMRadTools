@@ -38,21 +38,21 @@ namespace NFMRadTools.Utilities.Importing
                     case IntermediateMeshMode.DragShotWheel:
                         if (hasSeenDragShotWheel)
                         {
-                            other.Wheels.Add(GetWheel(cylinder, mesh.WheelDefinition));
+                            other.Wheels.Add(GetWheel(cylinder, mesh.WheelDefinition, mesh.Mode));
                             continue;
                         }
                         hasSeenDragShotWheel = true;
-                        Wheel dsWheelVanillaDef = GetWheel(cylinder, mesh.WheelDefinition);
-                        other.DragShotWheelDefinition.Radius = (int)cylinder.NFMCorrectedRadius;
+                        Wheel dsWheelVanillaDef = GetWheel(cylinder, mesh.WheelDefinition, mesh.Mode);
+                        other.DragShotWheelDefinition.Radius = (int)cylinder.NFMDsCorrectedRadius;
                         other.DragShotWheelDefinition.Depth = int.Abs(dsWheelVanillaDef.Width);
                         other.Wheels.Add(dsWheelVanillaDef);
                         break;
                     case IntermediateMeshMode.PhyrexianWheel:
                         currentPhyIndex++;
-                        other.Wheels.Add(GetWheel(cylinder, mesh.WheelDefinition));
+                        other.Wheels.Add(GetWheel(cylinder, mesh.WheelDefinition, mesh.Mode));
                         break;
                     case IntermediateMeshMode.VanillaWheel:
-                        other.Wheels.Add(GetWheel(cylinder, mesh.WheelDefinition));
+                        other.Wheels.Add(GetWheel(cylinder, mesh.WheelDefinition, mesh.Mode));
                         continue;
                 }
                 PolyGroup currentPolyGroup = null;
@@ -125,9 +125,9 @@ namespace NFMRadTools.Utilities.Importing
             return true;
         }
 
-        private static Wheel GetWheel(Cylinder c, IntermediateMeshWheelDefinition wheelDef)
+        private static Wheel GetWheel(Cylinder c, IntermediateMeshWheelDefinition wheelDef, IntermediateMeshMode mode)
         {
-            Wheel wheel = c.ConvertToNFMWheel();
+            Wheel wheel = c.ConvertToNFMWheel(mode);
             switch(wheelDef)
             {
                 case IntermediateMeshWheelDefinition.Auto: break;

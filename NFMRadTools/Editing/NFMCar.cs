@@ -504,9 +504,15 @@ namespace NFMRadTools.Editing
             {
                 sb.AppendLine(s);
             }
-
+            
             enumerable = PolyGroups.Where(x => x.Mode == PolyGroupMode.PhyrexianWheel);
             bool hasPhyWheels = enumerable.Any();
+            Dictionary<int, int> phyWheelIndexMap = null;
+            if (hasPhyWheels)
+            {
+                phyWheelIndexMap = new Dictionary<int, int>(Wheels.Count);
+            }
+            int wheelIndex = 0;
             foreach (IGrouping<Wheel.Definition, Wheel> wheelGroup in Wheels.GroupBy(x => x.GetDefinition()))
             {
                 Wheel.Definition def = wheelGroup.Key;
@@ -520,6 +526,7 @@ namespace NFMRadTools.Editing
                 IGrouping<bool, Wheel> leftWheels = sideGroups.FirstOrDefault(x => x.Key == false);
                 IGrouping<bool, Wheel> rightWheels = sideGroups.FirstOrDefault(x => x.Key == true);
                 if (leftWheels.Count() != rightWheels.Count()) throw new InvalidDataException("Wheel counts on left and right side do not match.");
+                
                 foreach(Wheel wheel in leftWheels.OrderByDescending(x => x.Z).Interlace(rightWheels.OrderByDescending(x => x.Z)))
                 {
                     sb.Append("w(")
@@ -530,8 +537,14 @@ namespace NFMRadTools.Editing
                         .Append(",").Append(wheel.Width)
                         .Append(",").Append(wheel.Height)
                         .Append(")");
-                    if (hasPhyWheels) sb.Append("c");
+                    if (hasPhyWheels)
+                    {
+                        sb.Append("c");
+                        int originalIndex = Wheels.IndexOf(wheel);
+                        phyWheelIndexMap.Add(originalIndex, wheelIndex);
+                    }
                     sb.AppendLine();
+                    wheelIndex++;
                 }
             }
 
@@ -544,13 +557,16 @@ namespace NFMRadTools.Editing
             if (hasPhyWheels)
             {
                 sb.AppendLine();
-                var groups = enumerable.GroupBy(x => x.PhyrexianWheelIndex).OrderBy(x => x.Key);
+                var groups = enumerable.GroupBy(x => phyWheelIndexMap[x.PhyrexianWheelIndex]).OrderBy(x => x.Key);
                 foreach (var group in groups)
                 {
                     sb.Append("<phy-wheel-").Append(group.Key).AppendLine(">");
                     foreach(PolyGroup g in group)
                     {
+                        int originalIndex = g.PhyrexianWheelIndex;
+                        g.PhyrexianWheelIndex = group.Key;
                         sb.AppendLine(g.ToString());
+                        g.PhyrexianWheelIndex = originalIndex;
                     }
                     sb.Append("</phy-wheel-").Append(group.Key).AppendLine(">");
                 }
