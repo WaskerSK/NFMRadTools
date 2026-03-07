@@ -99,9 +99,9 @@ namespace NFMRadTools.Editing
         public static Vector3D Cross(Vector3D A, Vector3D B) => new Vector3D(A.Y * B.Z - A.Z * B.Y, A.Z * B.X - A.X * B.Z, A.X * B.Y - A.Y * B.X);
         public static Vector3D PerAxisMid(Vector3D A, Vector3D B)
         {
-            return new Vector3D(A.X  + double.Abs(A.X - B.X),
-                A.Y + double.Abs(A.Y - B.Y),
-                A.Z + double.Abs(A.Z - B.Z)) / new Vector3D(2.0);
+            return new Vector3D(A.X + double.Abs(A.X - B.X) / 2.0,
+                A.Y + double.Abs(A.Y - B.Y) / 2.0,
+                A.Z + double.Abs(A.Z - B.Z) / 2.0);
         }
     }
 }
