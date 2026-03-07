@@ -106,7 +106,7 @@ namespace NFMRadTools.Utilities.Importing
         {
             if(group is null) return false;
             if((int)group.Mode != (int)mesh.Mode) return false;
-            if(!mesh.Name.Equals(group.Name, StringComparison.OrdinalIgnoreCase)) return false;
+            if(!m.Name.Equals(group.Name, StringComparison.OrdinalIgnoreCase)) return false;
             if(group.Mode == PolyGroupMode.PhyrexianWheel) return group.PhyrexianWheelIndex == phyIndex;
             return true;
         }
