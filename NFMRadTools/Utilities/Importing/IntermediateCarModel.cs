@@ -80,7 +80,11 @@ namespace NFMRadTools.Utilities.Importing
                         vertex.X = (int)v.X;
                         vertex.Y = (int)v.Y;
                         vertex.Z = (int)v.Z;
-                        p.Vertices.Add(vertex);
+                        if (mesh.Mode == IntermediateMeshMode.DragShotWheel)
+                        {
+                            if(!p.Vertices.Contains(vertex)) p.Vertices.Add(vertex);
+                        }
+                        else p.Vertices.Add(vertex);
                     }
                     p.Color = face.Material.Color;
                     if(!Matches(currentPolyGroup, face.Material, currentPhyIndex, mesh))
