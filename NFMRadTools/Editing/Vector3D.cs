@@ -101,7 +101,7 @@ namespace NFMRadTools.Editing
         {
             return new Vector3D(A.X  + double.Abs(A.X - B.X),
                 A.Y + double.Abs(A.Y - B.Y),
-                A.Z + double.Abs(A.Z - B.Z));
+                A.Z + double.Abs(A.Z - B.Z)) / new Vector3D(2.0);
         }
     }
 }
