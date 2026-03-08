@@ -182,6 +182,12 @@ namespace NFMRadTools.Editing
                     currentPoly.Glass = true;
                     continue;
                 }
+                if (line.StartsWith("glassTint"))
+                {
+                    if (currentGroup is null || currentPoly is null) throw new FormatException();
+                    currentPoly.GlassTint = true;
+                    continue;
+                }
                 if (line.StartsWith("light"))
                 {
                     if (currentGroup is null || currentPoly is null) throw new FormatException();
@@ -198,6 +204,12 @@ namespace NFMRadTools.Editing
                 {
                     if (currentGroup is null || currentPoly is null) throw new FormatException();
                     currentPoly.LightBack = true;
+                    continue;
+                }
+                if (line.StartsWith("lightR"))
+                {
+                    if (currentGroup is null || currentPoly is null) throw new FormatException();
+                    currentPoly.LightReverse = true;
                     continue;
                 }
                 if (line.StartsWith("lightBrake"))

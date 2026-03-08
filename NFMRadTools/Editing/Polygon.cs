@@ -11,10 +11,12 @@ namespace NFMRadTools.Editing
         public bool AlternativePolyMarkup { get; set; }
         public bool NoOutline { get; set; }
         public bool Glass { get; set; }
+        public bool GlassTint { get; set; }
         public bool Light { get; set; }
         public bool LightFront { get; set; }
         public bool LightBack { get; set; }
         public bool LightBrake { get; set; }
+        public bool LightReverse { get; set; }
         public bool DayOnly { get; set; }
         public bool NightOnly { get; set; }
         public Color Color { get; set; }
@@ -44,6 +46,8 @@ namespace NFMRadTools.Editing
                 sb.AppendLine("lightF");
             if (LightBack)
                 sb.AppendLine("lightB");
+            if (LightReverse)
+                sb.AppendLine("lightR");
             if (LightBrake)
                 sb.AppendLine("lightBrake");
             if (DayOnly)
@@ -54,6 +58,8 @@ namespace NFMRadTools.Editing
                 sb.AppendLine("noOutline");
             if (Glass)
                 sb.AppendLine("glass");
+            if (GlassTint)
+                sb.AppendLine("glassTint");
             if (Fs.HasValue)
                 sb.Append("fs(").Append(Fs.Value).AppendLine(")");
             if (Gr != 0)

@@ -509,6 +509,33 @@ namespace NFMRadTools.Commanding
             }
         }
 
+        [Command(CommandName = "car.groups.setglasstint", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds glassTint attribute to all polygons within the given poly group.
+            =Input=
+            int[] GroupIndexes - Zero based array of index of the groups separated by ;.
+            bool Value - The bool value that indicates wether the polygons will have glassTint attribute.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use true if u want glassTint attribute, otherwise false for no glassTint.
+            """)]
+        public static void SetGroupGlassTint(int[] GroupIndexes, bool Value)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.GlassTint = Value;
+                }
+                Logger.Info($"Value of \'glassTint\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
         [Command(CommandName = "car.groups.setlight", VerifyCarLoaded = true)]
         [Description("""
             Removes or adds light attribute to all polygons within the given poly group.
@@ -587,6 +614,33 @@ namespace NFMRadTools.Commanding
                     p.LightBack = Value;
                 }
                 Logger.Info($"Value of \'lightB\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.setlightR", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds lightR attribute to all polygons within the given poly group.
+            =Input=
+            int[] GroupIndexes - Zero based array of index of the groups separated by ;.
+            bool Value - The bool value that indicates wether the polygons will have lightR attribute.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use true if u want lightR attribute, otherwise false for no lightR.
+            """)]
+        public static void SetGroupLightReverse(int[] GroupIndexes, bool Value)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.LightReverse = Value;
+                }
+                Logger.Info($"Value of \'lightR\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
             }
         }
 
@@ -696,6 +750,140 @@ namespace NFMRadTools.Commanding
                 }
                 Logger.Info($"Value of \'gr\' has been {(Value == 0 ? "removed from" : $"set to {Value} on")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
             } 
+        }
+
+        [Command(CommandName = "car.groups.makewheelwell", VerifyCarLoaded = true)]
+        [Description("""
+            Sets gr(40) and fs(0) value on a poly group.
+            =Inputs=
+            int[] GroupIndexes = Zero based indexes of the groups separated by ;.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            """)]
+        public static void MakeGroupWheelWell(int[] GroupIndexes)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.Gr = 40;
+                    p.Fs = 0;
+                }
+                Logger.Info($"Following values \"gr(40) fs(0)\" have been set on {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.makecoloredoutline", VerifyCarLoaded = true)]
+        [Description("""
+            Sets gr(-10) value on a poly group.
+            =Effect=
+            Renders the polygon's outline in the same colour as the polygon.
+            =Inputs=
+            int[] GroupIndexes = Zero based indexes of the groups separated by ;.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            """)]
+        public static void MakeGroupColoredOutlines(int[] GroupIndexes)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.Gr = -10;
+                }
+                Logger.Info($"Following value \"gr(-10)\" have been set on {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.makeinvisible", VerifyCarLoaded = true)]
+        [Description("""
+            Sets gr(-13) value on a poly group.
+            =Effect=
+            Renders the polygon invisible, just showing it's shadow.
+            =Inputs=
+            int[] GroupIndexes = Zero based indexes of the groups separated by ;.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            """)]
+        public static void MakeGroupInvisible(int[] GroupIndexes)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.Gr = -13;
+                }
+                Logger.Info($"Following value \"gr(-13)\" have been set on {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.makedamaged", VerifyCarLoaded = true)]
+        [Description("""
+            Sets gr(-15) value on a poly group.
+            =Effect=
+            Renders the polygon as if it has been damaged.
+            =Inputs=
+            int[] GroupIndexes = Zero based indexes of the groups separated by ;.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            """)]
+        public static void MakeGroupDamaged(int[] GroupIndexes)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.Gr = -15;
+                }
+                Logger.Info($"Following value \"gr(-15)\" have been set on {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.makeelectricoutline", VerifyCarLoaded = true)]
+        [Description("""
+            Sets gr(-18) value on a poly group.
+            =Effect=
+            Renders the polygon's outline with an electrifying effect.
+            =Inputs=
+            int[] GroupIndexes = Zero based indexes of the groups separated by ;.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            """)]
+        public static void MakeGroupElectrictOutline(int[] GroupIndexes)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.Gr = -18;
+                }
+                Logger.Info($"Following value \"gr(-18)\" have been set on {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
         }
 
         [Command(CommandName = "car.colors.get", VerifyCarLoaded = true)]
