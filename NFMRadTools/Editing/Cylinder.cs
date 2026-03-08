@@ -36,7 +36,7 @@ namespace NFMRadTools.Editing
             }
             NFMDsCorrectedRadius = Radius * adjustScale;
             NFMCorrectedWidth = (Width * 1.25) * (Location.X >= 0 ? -1 : 1);
-            NFMVanillaCorrectedWheelRadius = Radius / 2.0 * (35.0 / 30.0);
+            NFMVanillaCorrectedWheelRadius = Radius * (35.0 / 42.0); /// 2.0 * (35.0 / 30.0);
         }
 
         public Wheel ConvertToNFMWheel(IntermediateMeshMode mode)

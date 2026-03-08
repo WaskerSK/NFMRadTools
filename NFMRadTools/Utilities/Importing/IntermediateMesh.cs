@@ -41,7 +41,7 @@ namespace NFMRadTools.Utilities.Importing
             Vector3D fminV = minV * Vector3D.VectorYZ;
             Vector3D fmaxV = maxV * Vector3D.VectorYZ;
             Vector3D fLoc = location * Vector3D.VectorYZ;
-            double radius = double.Max(Vector3D.Length(Vector3D.Abs(Vector3D.Distance(fLoc, fminV))), Vector3D.Length(Vector3D.Abs(Vector3D.Distance(fLoc, fmaxV))));
+            double radius = double.Max(Vector3D.Max(Vector3D.Abs(Vector3D.Distance(fLoc, fminV))), Vector3D.Max(Vector3D.Abs(Vector3D.Distance(fLoc, fmaxV))));
             double width = double.Abs(maxV.X - minV.X);
             return new Cylinder(location, /*Vector3D.Zero,*/ radius, width);
         }
