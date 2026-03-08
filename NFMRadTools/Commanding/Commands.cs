@@ -1,4 +1,5 @@
 ﻿using NFMRadTools.Editing;
+using NFMRadTools.Editing.Presets;
 using NFMRadTools.Utilities;
 using NFMRadTools.Utilities.Importing;
 using System;
@@ -811,6 +812,57 @@ namespace NFMRadTools.Commanding
                 Logger.Error(e.ToString());
             }
         }
+        [Command(CommandName = "car.stats.recharged.set", VerifyCarLoaded = true)]
+        [Description("""
+            Sets the rechargeds stats to given preset or removes them entirely.
+            =Inputs=
+            string RechargedStatsPreset (optional) - Name of the preset to apply.
+            =Remakrs=
+            Leave preset name empty or type "null" or "none" to remove recharged stats.
+            """)]
+        public static void SetRechargedStatsPreset(string RechargedStatsPreset = null)
+        {
+            if(string.IsNullOrWhiteSpace(RechargedStatsPreset) 
+                || "null".Equals(RechargedStatsPreset, StringComparison.OrdinalIgnoreCase)
+                || "none".Equals(RechargedStatsPreset, StringComparison.OrdinalIgnoreCase))
+            {
+                Program.CurrentCar.RechargedStats = null;
+                Logger.Info("Recharged stats of the car were removed.");
+                return;
+            }
+            string presetName = RechargedStatsPreset;
+            if (!RechargedStatPresets.GetPreset(RechargedStatsPreset, out RechargedStatsPreset result))
+            {
+                Logger.Warning($"Preset \"{RechargedStatsPreset}\" was not found, using default \"High Rider\" preset instead.");
+                presetName = "High Rider";
+            }
+            if(Program.CurrentCar.RechargedStats is null)
+            {
+                Program.CurrentCar.RechargedStats = new RechargedStats(result);
+            }
+            else
+            {
+                Program.CurrentCar.RechargedStats.ApplyPreset(result);
+            }
+            Logger.Info($"Recharged stats were set to \"{presetName.Replace('_', ' ')}\" preset.");
+        }
+        [Command(CommandName = "car.stats.recharged.presets")]
+        [Description("Lists all available recharged stats presets.")]
+        public static void ListRechargedStatPresets()
+        {
+            IEnumerable<string> names = RechargedStatPresets.PresetNames();
+            if (!names.Any())
+            {
+                Logger.Info("There are no presets currently available.");
+                return;
+            }
+            Logger.Info("List of presets:");
+            foreach (string name in names)
+            {
+                Logger.Log(name, ConsoleColor.Cyan);
+            }
+        }
+
         [Command(CommandName = "import")]
         [Description("""
             Imports a model and create a new car or merges the model with an already loaded car.
@@ -818,10 +870,19 @@ namespace NFMRadTools.Commanding
             string File - A full path to a file or a file name of the model.
             ImportMode Mode (optional) - An import mode method to use. New to create a new car or Merge to combine with currently loaded car.
             double Scale (optional) - The scale of the car when imported.
+            string RechargedStatsPreset (optional) - Name of the recharged stats preset to use.
+            AutoColoringMode ColoringMode (optional) - The auto coloring mode to use.
             =Remarks=
             If a file name is provided without a full path, the import folder will be used to look for the file.
+            Leave preset name empty or type "null" or "none" to remove recharged stats.
+            Available coloring modes:
+            Polygons - Scans colors based on number of polygons.
+            Vertices - Scans colors based on number of vertices.
+            Bounds - Scans colors based on the volume of the bounding box that encapsulates all polygons of given color.
+            Edge - Scanes colors based on length of edges.
+            Surface - Currently not implemented. Scans colors based on surface area of polygons.
             """)]
-        public static void Import(string File, ImportMode Mode = ImportMode.New, double Scale = 1.0)
+        public static void Import(string File, ImportMode Mode = ImportMode.New, double Scale = 1.0, string RechargedStatsPreset = nameof(RechargedStatPresets.High_Rider), AutoColoringMode ColoringMode = AutoColoringMode.Polygons)
         {
             if(Mode < 0 || Mode > ImportMode.Merge)
             {
@@ -889,7 +950,8 @@ namespace NFMRadTools.Commanding
                     Program.CurrentCar.LoadedFromFile = Path.GetFileNameWithoutExtension(File);
                     break;
             }
-            AutoSetCarColors(AutoColoringMode.Polygons);
+            AutoSetCarColors(ColoringMode);
+            SetRechargedStatsPreset(RechargedStatsPreset);
             Logger.Info("Finished importing.");
             return;
         }

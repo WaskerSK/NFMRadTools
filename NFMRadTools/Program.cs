@@ -12,6 +12,8 @@ using System.Text;
 using System.Text.Json;
 using System.Xml;
 
+[assembly: DevMode(false)]
+
 namespace NFMRadTools
 {
     public class Program
@@ -96,15 +98,28 @@ namespace NFMRadTools
         {
             CommandList.Clear();
             Logger.Info("Initializing commands.");
+            bool devMode = false;
+            DevModeAttribute devAtt = Assembly.GetExecutingAssembly().GetCustomAttribute<DevModeAttribute>();
+            if(devAtt is not null)
+            {
+                devMode = devAtt.DevMode;
+            }
             foreach (Type t in Assembly.GetExecutingAssembly().GetTypes())
             {
-                if (t.IsDefined(typeof(CommandAttribute)))
+                CommandAttribute typeCmdAtt = t.GetCustomAttribute<CommandAttribute>();
+                bool canProceesToMethods = false;
+                if(typeCmdAtt is not null)
+                {
+                    canProceesToMethods = typeCmdAtt.DevCommand.ToInt() <= devMode.ToInt();
+                }
+                if (canProceesToMethods)
                 {
                     foreach (MethodInfo mi in t.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                     {
                         if (mi.IsDefined(typeof(CommandAttribute)))
                         {
                             CommandAttribute cmdAtt = mi.GetCustomAttribute<CommandAttribute>();
+                            if (cmdAtt.DevCommand.ToInt() > devMode.ToInt()) continue;
                             string cmdName = null;
                             if (string.IsNullOrWhiteSpace(cmdAtt.CommandName)) cmdName = mi.Name;
                             else cmdName = cmdAtt.CommandName;

@@ -35,12 +35,17 @@ namespace NFMRadTools.Editing
         public double Dishandle { get; set; } //handling stat bar value on car select screen
         public double Outdam { get; set; } //endurance stat bar value on car select screen
 
-        public RechargedStats() : this(RechargedStatPresets.Default)
+        public RechargedStats() : this(RechargedStatPresets.High_Rider)
         {
 
         }
 
         public RechargedStats(RechargedStatsPreset preset)
+        {
+            ApplyPreset(preset);
+        }
+
+        public void ApplyPreset(RechargedStatsPreset preset)
         {
             swits = preset.Swits;
             acelf = preset.Acelf;

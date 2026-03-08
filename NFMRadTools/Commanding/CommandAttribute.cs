@@ -11,5 +11,6 @@ namespace NFMRadTools.Commanding
     {
         public string CommandName { get; init; }
         public bool VerifyCarLoaded { get; init; }
+        public bool DevCommand { get; init; }
     }
 }
