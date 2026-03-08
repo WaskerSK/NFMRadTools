@@ -1249,9 +1249,14 @@ namespace NFMRadTools.Commanding
             double Scale (optional) - The scale of the car when imported.
             string RechargedStatsPreset (optional) - Name of the recharged stats preset to use.
             AutoColoringMode ColoringMode (optional) - The auto coloring mode to use.
+            VertexMergingRule VertexMergingRule (optional) - Rule that decides on what polygons to merge vertices removing duplicate points.
             =Remarks=
             If a file name is provided without a full path, the import folder will be used to look for the file.
             Leave preset name empty or type "null" or "none" to remove recharged stats.
+            Available merging rules:
+            None - Do not merge verts.
+            All - Merges verts on all polygons.
+            Wheels - Merges verts only on custom wheels.
             Available coloring modes:
             Polygons - Scans colors based on number of polygons.
             Vertices - Scans colors based on number of vertices.
@@ -1259,7 +1264,7 @@ namespace NFMRadTools.Commanding
             Edge - Scanes colors based on length of edges.
             Surface - Currently not implemented. Scans colors based on surface area of polygons.
             """)]
-        public static void Import(string File, ImportMode Mode = ImportMode.New, double Scale = 1.0, string RechargedStatsPreset = nameof(RechargedStatPresets.High_Rider), AutoColoringMode ColoringMode = AutoColoringMode.Polygons)
+        public static void Import(string File, ImportMode Mode = ImportMode.New, double Scale = 1.0, string RechargedStatsPreset = nameof(RechargedStatPresets.High_Rider), AutoColoringMode ColoringMode = AutoColoringMode.Polygons, VertexMergingRule VertexMergingRule = VertexMergingRule.All)
         {
             if(Mode < 0 || Mode > ImportMode.Merge)
             {
@@ -1318,12 +1323,12 @@ namespace NFMRadTools.Commanding
                         goto case ImportMode.New;
                     }
                     Logger.Info("Merging cars.");
-                    importedCar.MergeWithNFMCar(Program.CurrentCar);
+                    importedCar.MergeWithNFMCar(Program.CurrentCar, VertexMergingRule);
                     Logger.Info("Merging complete.");
                     break;
                 case ImportMode.New:
                     Logger.Info("Converting to NFM car.");
-                    Program.CurrentCar = importedCar.ConvertToNFMCar();
+                    Program.CurrentCar = importedCar.ConvertToNFMCar(VertexMergingRule);
                     Program.CurrentCar.LoadedFromFile = Path.GetFileNameWithoutExtension(File);
                     break;
             }

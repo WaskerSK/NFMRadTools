@@ -11,15 +11,15 @@ namespace NFMRadTools.Utilities.Importing
     {
         public List<IntermediateMesh> Meshes { get; } = new List<IntermediateMesh>();
 
-        public NFMCar ConvertToNFMCar()
+        public NFMCar ConvertToNFMCar(VertexMergingRule vertexMergingRule)
         {
             NFMCar car = new NFMCar();
-            MergeWithNFMCar(car);
+            MergeWithNFMCar(car, vertexMergingRule);
             car.SetDefaultCarPhysicProperties();
             return car;
         }
 
-        public void MergeWithNFMCar(NFMCar other)
+        public void MergeWithNFMCar(NFMCar other, VertexMergingRule vertexMergingRule)
         {
             if(other is null) return;
             if(!Meshes.Any()) return;
@@ -83,7 +83,18 @@ namespace NFMRadTools.Utilities.Importing
                         vertex.Z = (int)v.Z;
                         p.Vertices.Add(vertex);
                     }
-                    if(mesh.Mode == IntermediateMeshMode.DragShotWheel || mesh.Mode == IntermediateMeshMode.PhyrexianWheel)
+                    bool mergeVerts = false;
+                    switch(vertexMergingRule)
+                    {
+                        case VertexMergingRule.None: break;
+                        case VertexMergingRule.All:
+                            mergeVerts = true;
+                            break;
+                        case VertexMergingRule.Wheels:
+                            mergeVerts = mesh.Mode == IntermediateMeshMode.DragShotWheel || mesh.Mode == IntermediateMeshMode.PhyrexianWheel;
+                            break;
+                    }
+                    if(mergeVerts)
                     {
                         for(int i = p.Vertices.Count - 1; i >= 0; i--)
                         {
