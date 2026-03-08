@@ -176,7 +176,49 @@ namespace NFMRadTools.Editing
                     currentPoly.NoOutline = true;
                     continue;
                 }
-                if(line.StartsWith("1stColor("))
+                if(line.StartsWith("glass"))
+                {
+                    if (currentGroup is null || currentPoly is null) throw new FormatException();
+                    currentPoly.Glass = true;
+                    continue;
+                }
+                if (line.StartsWith("light"))
+                {
+                    if (currentGroup is null || currentPoly is null) throw new FormatException();
+                    currentPoly.Light = true;
+                    continue;
+                }
+                if(line.StartsWith("lightF"))
+                {
+                    if (currentGroup is null || currentPoly is null) throw new FormatException();
+                    currentPoly.LightFront = true;
+                    continue;
+                }
+                if (line.StartsWith("lightB"))
+                {
+                    if (currentGroup is null || currentPoly is null) throw new FormatException();
+                    currentPoly.LightBack = true;
+                    continue;
+                }
+                if (line.StartsWith("lightBrake"))
+                {
+                    if (currentGroup is null || currentPoly is null) throw new FormatException();
+                    currentPoly.LightBrake = true;
+                    continue;
+                }
+                if (line.StartsWith("dayOnly"))
+                {
+                    if (currentGroup is null || currentPoly is null) throw new FormatException();
+                    currentPoly.DayOnly = true;
+                    continue;
+                }
+                if (line.StartsWith("nightOnly"))
+                {
+                    if (currentGroup is null || currentPoly is null) throw new FormatException();
+                    currentPoly.NightOnly = true;
+                    continue;
+                }
+                if (line.StartsWith("1stColor("))
                 {
                     line = line.Slice("1stColor(".Length);
                     Color c = new Color();

@@ -460,7 +460,7 @@ namespace NFMRadTools.Commanding
             Removes or adds noOutline attribute to all polygons within the given poly group.
             =Input=
             int[] GroupIndexes - Zero based array of index of the groups separated by ;.
-            bool Value - The bool value that indicates wether the car will have outlines.
+            bool Value - The bool value that indicates wether the polygons will have outlines.
             =Remarks=
             Use "car.groups.list" command to see group indexes.
             Use true if u want outline, otherwise false for no outline.
@@ -479,6 +479,195 @@ namespace NFMRadTools.Commanding
                     p.NoOutline = !Value;
                 }
                 Logger.Info($"Value of \'noOutline\' has been {(!Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.setglass", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds glass attribute to all polygons within the given poly group.
+            =Input=
+            int[] GroupIndexes - Zero based array of index of the groups separated by ;.
+            bool Value - The bool value that indicates wether the polygons will have glass attribute.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use true if u want glass attribute, otherwise false for no glass.
+            """)]
+        public static void SetGroupGlass(int[] GroupIndexes, bool Value)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.Glass = Value;
+                }
+                Logger.Info($"Value of \'glass\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.setlight", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds light attribute to all polygons within the given poly group.
+            =Input=
+            int[] GroupIndexes - Zero based array of index of the groups separated by ;.
+            bool Value - The bool value that indicates wether the polygons will have light attribute.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use true if u want light attribute, otherwise false for no light.
+            """)]
+        public static void SetGroupLight(int[] GroupIndexes, bool Value)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.Light = Value;
+                }
+                Logger.Info($"Value of \'light\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.setlightF", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds lightF attribute to all polygons within the given poly group.
+            =Input=
+            int[] GroupIndexes - Zero based array of index of the groups separated by ;.
+            bool Value - The bool value that indicates wether the polygons will have lightF attribute.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use true if u want lightF attribute, otherwise false for no lightF.
+            """)]
+        public static void SetGroupLightFront(int[] GroupIndexes, bool Value)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.LightFront = Value;
+                }
+                Logger.Info($"Value of \'lightF\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.setlightB", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds lightB attribute to all polygons within the given poly group.
+            =Input=
+            int[] GroupIndexes - Zero based array of index of the groups separated by ;.
+            bool Value - The bool value that indicates wether the polygons will have lightB attribute.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use true if u want lightB attribute, otherwise false for no lightB.
+            """)]
+        public static void SetGroupLightBack(int[] GroupIndexes, bool Value)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.LightBack = Value;
+                }
+                Logger.Info($"Value of \'lightB\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.setlightbrake", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds lightBrake attribute to all polygons within the given poly group.
+            =Input=
+            int[] GroupIndexes - Zero based array of index of the groups separated by ;.
+            bool Value - The bool value that indicates wether the polygons will have lightBrake attribute.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use true if u want lightBrake attribute, otherwise false for no lightBrake.
+            """)]
+        public static void SetGroupLightBrake(int[] GroupIndexes, bool Value)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.LightBrake = Value;
+                }
+                Logger.Info($"Value of \'lightBrake\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.setdayonly", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds dayOnly attribute to all polygons within the given poly group.
+            =Input=
+            int[] GroupIndexes - Zero based array of index of the groups separated by ;.
+            bool Value - The bool value that indicates wether the polygons will have dayOnly attribute.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use true if u want dayOnly attribute, otherwise false for no dayOnly.
+            """)]
+        public static void SetGroupDayOnly(int[] GroupIndexes, bool Value)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.DayOnly = Value;
+                }
+                Logger.Info($"Value of \'dayOnly\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
+            }
+        }
+
+        [Command(CommandName = "car.groups.setnightonly", VerifyCarLoaded = true)]
+        [Description("""
+            Removes or adds nightOnly attribute to all polygons within the given poly group.
+            =Input=
+            int[] GroupIndexes - Zero based array of index of the groups separated by ;.
+            bool Value - The bool value that indicates wether the polygons will have nightOnly attribute.
+            =Remarks=
+            Use "car.groups.list" command to see group indexes.
+            Use true if u want nightOnly attribute, otherwise false for no nightOnly.
+            """)]
+        public static void SetGroupNightOnly(int[] GroupIndexes, bool Value)
+        {
+            if (GroupIndexes.Length <= 0)
+            {
+                Logger.Warning("No indexes provided. No groups were affected.");
+                return;
+            }
+            foreach (int GroupIndex in GroupIndexes)
+            {
+                foreach (Polygon p in Program.CurrentCar.PolyGroups[GroupIndex].Polygons)
+                {
+                    p.NightOnly = Value;
+                }
+                Logger.Info($"Value of \'nightOnly\' has been {(Value ? "added to" : "removed from")} {Program.CurrentCar.PolyGroups[GroupIndex].Polygons.Count} - Polygons in group [{GroupIndex}]");
             }
         }
 
