@@ -16,6 +16,7 @@ namespace NFMRadTools
 {
     public class Program
     {
+        public const string NFMDemicalFormat = "0.0###############";
         public static string CarDirectory => Config.CarDirectory;
         public static string ImportDirectory => Config.ImportDirectory;
         public static Config Config { get; private set; }

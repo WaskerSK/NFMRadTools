@@ -40,9 +40,16 @@ namespace System
             {
                 i++;
             }
+            bool seenDecimal = false;
             for (; index + i < span.Length; i++)
             {
                 if (char.IsNumber(span[index + i])) continue;
+                if (span[index + i] == '.')
+                {
+                    if (seenDecimal) return i;
+                    seenDecimal = true;
+                    continue;
+                }
                 return i;
             }
             return i;

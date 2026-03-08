@@ -24,6 +24,7 @@ namespace NFMRadTools.Editing
         public Stats? Stats { get; set; }
         public Physics? Physics { get; set; }
         public int? Handling { get; set; }
+        public RechargedStats RechargedStats { get; set; }
 
         public DragShotWheelDefinition DragShotWheelDefinition { get; }
 
@@ -419,7 +420,229 @@ namespace NFMRadTools.Editing
                     car.Handling = handling;
                     continue;
                 }
-                if(currentGroup is null || currentPoly is null)
+                if(line.StartsWith("swits("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("swits(".Length).TrimStart();
+                    int[] arr = ArrayPool<int>.Shared.Rent(3);
+                    try
+                    {
+                        int indexOfComma = -1;
+                        for(int i = 0; i < 3; i++)
+                        {
+                            line = line.Slice(indexOfComma + 1).TrimStart();
+                            arr[i] = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                            indexOfComma = line.IndexOf(',');
+                        }
+                        Gearbox<int> swits = new Gearbox<int>();
+                        swits.Gear1 = arr[0];
+                        swits.Gear2 = arr[1];
+                        swits.Gear3 = arr[2];
+                        stats.Swits = swits;
+                    }
+                    finally
+                    {
+                        ArrayPool<int>.Shared.Return(arr);
+                    }
+                    continue;
+                }
+                if(line.StartsWith("acelf("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("acelf(".Length).TrimStart();
+                    double[] arr = ArrayPool<double>.Shared.Rent(3);
+                    try
+                    {
+                        int indexOfComma = -1;
+                        for (int i = 0; i < 3; i++)
+                        {
+                            line = line.Slice(indexOfComma + 1).TrimStart();
+                            arr[i] = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                            indexOfComma = line.IndexOf(',');
+                        }
+                        Gearbox<double> acelf = new Gearbox<double>();
+                        acelf.Gear1 = arr[0];
+                        acelf.Gear2 = arr[1];
+                        acelf.Gear3 = arr[2];
+                        stats.Acelf = acelf;
+                    }
+                    finally
+                    {
+                        ArrayPool<double>.Shared.Return(arr);
+                    }
+                    continue;
+                }
+                if(line.StartsWith("handb("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("handb(".Length).TrimStart();
+                    stats.Handbrake = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if(line.StartsWith("airs("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("airs(".Length).TrimStart();
+                    stats.Airspeed = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("airc("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("airc(".Length).TrimStart();
+                    stats.Aircontrol = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("turn("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("turn(".Length).TrimStart();
+                    stats.Turnspeed = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("grip("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("grip(".Length).TrimStart();
+                    stats.Grip = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("bounce("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("bounce(".Length).TrimStart();
+                    stats.Bounce = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("simag("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("simag(".Length).TrimStart();
+                    stats.Simag = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("moment("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("moment(".Length).TrimStart();
+                    stats.Moment = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("comprad("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("comprad(".Length).TrimStart();
+                    stats.Comprad = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("push("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("push(".Length).TrimStart();
+                    stats.PushesOthers = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("revpush("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("revpush(".Length).TrimStart();
+                    stats.GetsPushed = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("lift("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("lift(".Length).TrimStart();
+                    stats.LiftsOthers = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("revlift("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("revlift(".Length).TrimStart();
+                    stats.GetsLifted = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("powerloss("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("powerloss(".Length).TrimStart();
+                    stats.Powerloss = long.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("flipy("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("flipy(".Length).TrimStart();
+                    stats.Flipy = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("msquash("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("msquash(".Length).TrimStart();
+                    stats.Msquash = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("clrad("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("clrad(".Length).TrimStart();
+                    stats.Clrad = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("dammult("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("dammult(".Length).TrimStart();
+                    stats.DamageMultiplier = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("maxmag("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("maxmag(".Length).TrimStart();
+                    stats.Maxmag = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("dishandle("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("dishandle(".Length).TrimStart();
+                    stats.Dishandle = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("outdam("))
+                {
+                    if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
+                    RechargedStats stats = car.RechargedStats;
+                    line = line.Slice("outdam(".Length).TrimStart();
+                    stats.Outdam = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (currentGroup is null || currentPoly is null)
                 {
                     car.Metadata.Add(line.ToString());
                     continue;
@@ -480,6 +703,11 @@ namespace NFMRadTools.Editing
             if(SecondColor.HasValue)
             {
                 sb.Append("2ndColor(").Append(SecondColor.Value.ToString()).AppendLine(")");
+            }
+            sb.AppendLine();
+            if(RechargedStats is not null)
+            {
+                sb.AppendLine(RechargedStats.ToString());
             }
             foreach(PolyGroup g in PolyGroups.Where(x => x.Mode == PolyGroupMode.Normal))
             {
