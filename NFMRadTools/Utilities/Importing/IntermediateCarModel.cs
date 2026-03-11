@@ -75,6 +75,7 @@ namespace NFMRadTools.Utilities.Importing
                                 bool found = false;
                                 foreach(IntermediateMesh prevG6Mesh in Meshes.Where(x => x.Mode == IntermediateMeshMode.G6Wheel))
                                 {
+                                    if (prevG6Mesh == mesh) break;
                                     if(mesh.IsMeshIdenticalTo(prevG6Mesh, 0.5))
                                     {
                                         g6Wheel.WheelModel = prevG6Mesh.G6WheelIndex;

@@ -83,7 +83,7 @@ namespace NFMRadTools.Utilities.Importing
                     if (name[0] == '-' || name[0] == '_')
                     {
                         ReadOnlySpan<char> nameSlice = name.Slice(1);
-                        int numbers = nameSlice.GetLengthOfNumericCharactersFromIndex(0);
+                        int numbers = nameSlice.GetLengthOfNumericCharactersFromIndex(0, false);
                         if (numbers > 0)
                         {
                             defs.G6WheelIndex = int.Parse(nameSlice.Slice(0, numbers));

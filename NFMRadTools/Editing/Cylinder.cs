@@ -59,6 +59,7 @@ namespace NFMRadTools.Editing
                     w.Height = (int)NFMDsCorrectedWheelRadius;
                     w.RimSize = (int)(NFMDsCorrectedWheelRadius * 0.7);
                     break;
+                case IntermediateMeshMode.G6Wheel:
                 case IntermediateMeshMode.PhyrexianWheel:
                 case IntermediateMeshMode.VanillaWheel:
                     w.Height = (int)NFMVanillaCorrectedWheelRadius;

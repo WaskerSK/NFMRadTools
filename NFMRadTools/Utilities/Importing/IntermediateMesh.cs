@@ -45,7 +45,8 @@ namespace NFMRadTools.Utilities.Importing
             for(int i = 0; i < this.Vertices.Count; i++)
             {
                 double distance = Vector3D.Length(Vector3D.Distance(A_orderedVerts[i], B_orderedVerts[i]));
-                if(distance > errorTolerance) return false;
+                if(distance > errorTolerance)
+                    return false;
             }
             return true;
         }

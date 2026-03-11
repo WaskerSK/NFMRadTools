@@ -30,7 +30,7 @@ namespace System
         #endregion
 
         #region CharacterSpan
-        public static int GetLengthOfNumericCharactersFromIndex(this ReadOnlySpan<char> span, int index)
+        public static int GetLengthOfNumericCharactersFromIndex(this ReadOnlySpan<char> span, int index, bool allowDecimals = true)
         {
             if (index < 0) return 0;
             if (span.Length <= 0 || index >= span.Length) return 0;
@@ -41,7 +41,7 @@ namespace System
             {
                 i++;
             }
-            bool seenDecimal = false;
+            bool seenDecimal = !allowDecimals;
             for (; index + i < span.Length; i++)
             {
                 if (char.IsNumber(span[index + i])) continue;
