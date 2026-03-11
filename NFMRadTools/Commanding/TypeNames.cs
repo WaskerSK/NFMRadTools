@@ -53,6 +53,8 @@ namespace NFMRadTools.Commanding
         public static string GetTypeName(Type type)
         {
             if (type is null) return null;
+            Type nullableGenericT = Nullable.GetUnderlyingType(type);
+            if(nullableGenericT is not null) type = nullableGenericT;
             if(NameDictionary.TryGetValue(type, out var typeName)) return typeName;
             return type.Name;
         }

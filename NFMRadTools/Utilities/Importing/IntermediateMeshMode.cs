@@ -11,6 +11,7 @@ namespace NFMRadTools.Utilities.Importing
         Normal = 0,
         DragShotWheel = 1,
         PhyrexianWheel = 2,
-        VanillaWheel = 3,
+        G6Wheel = 3,
+        VanillaWheel = 4,
     }
 }

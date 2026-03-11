@@ -43,7 +43,8 @@ namespace NFMRadTools.Editing
             if(string.IsNullOrWhiteSpace(carData)) return null;
             OptimizedStringReader sr = new OptimizedStringReader(carData);
             NFMCar car = new NFMCar();
-            int? phyIndex = null;
+            int? customWheelIndex = null;
+            bool hasG6Wheels = false;
             PolyGroupMode currentMode = PolyGroupMode.Normal;
             PolyGroup currentGroup = null;
             Polygon currentPoly = null;
@@ -65,6 +66,10 @@ namespace NFMRadTools.Editing
                         currentGroup = new PolyGroup();
                         currentGroup.Mode = currentMode;
                         currentGroup.Name = RandomName.Get();
+                        if (customWheelIndex.HasValue)
+                        {
+                            currentGroup.CustomWheelIndex = customWheelIndex.Value;
+                        }
                         car.PolyGroups.Add(currentGroup);
                     }
                     currentPoly = new Polygon();
@@ -77,6 +82,10 @@ namespace NFMRadTools.Editing
                         currentGroup = new PolyGroup();
                         currentGroup.Mode = currentMode;
                         currentGroup.Name = RandomName.Get();
+                        if (customWheelIndex.HasValue)
+                        {
+                            currentGroup.CustomWheelIndex = customWheelIndex.Value;
+                        }
                         car.PolyGroups.Add(currentGroup);
                     }
                     currentPoly = new Polygon();
@@ -109,9 +118,9 @@ namespace NFMRadTools.Editing
                         currentGroup.Name = line.ToString();
                     }
                     currentGroup.Mode = currentMode;
-                    if(currentMode == PolyGroupMode.PhyrexianWheel)
+                    if(currentMode == PolyGroupMode.PhyrexianWheel || currentMode == PolyGroupMode.G6Wheel)
                     {
-                        currentGroup.PhyrexianWheelIndex = phyIndex.Value;
+                        currentGroup.CustomWheelIndex = customWheelIndex.Value;
                     }
                     car.PolyGroups.Add(currentGroup);
                     continue;
@@ -305,6 +314,22 @@ namespace NFMRadTools.Editing
                     currentGroup = null;
                     continue;
                 }
+                if(line.StartsWith("<wheelModel(")) // begin G6 wheel
+                {
+                    currentMode = PolyGroupMode.G6Wheel;
+                    hasG6Wheels = true;
+                    currentGroup = null;
+                    line = line.Slice("<wheelModel(".Length);
+                    customWheelIndex = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if(line.StartsWith("</wheelModel>"))
+                {
+                    currentMode = PolyGroupMode.Normal;
+                    currentGroup = null;
+                    customWheelIndex = null;
+                    continue;
+                }
                 if(line.StartsWith("wheel("))
                 {
                     if (currentGroup is null || currentPoly is null) throw new FormatException();
@@ -315,7 +340,7 @@ namespace NFMRadTools.Editing
                 {
                     currentMode = PolyGroupMode.PhyrexianWheel;
                     line = line.Slice("<phy-wheel-".Length);
-                    phyIndex = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    customWheelIndex = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
                     currentGroup = null;
                     continue;
                 }
@@ -323,7 +348,7 @@ namespace NFMRadTools.Editing
                 {
                     currentMode = PolyGroupMode.Normal;
                     currentGroup = null;
-                    phyIndex = null;
+                    customWheelIndex = null;
                     continue;
                 }
                 if(line.StartsWith("gwgr("))
@@ -386,6 +411,15 @@ namespace NFMRadTools.Editing
                     int indexOfFifthComma = line.IndexOf(',');
                     ReadOnlySpan<char> height = line.Slice(indexOfFifthComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFifthComma + 1));
                     int iHeight = int.Parse(height);
+                    int? wheelModel = null;
+                    if(hasG6Wheels)
+                    {
+                        line = line.Slice(indexOfFifthComma + 1);
+                        int indexOfSixthComma = line.IndexOf(",");
+                        ReadOnlySpan<char> model = line.Slice(indexOfSixthComma + 1);
+                        model = model.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
+                        wheelModel = int.Parse(model);
+                    }
                     Wheel wheel = new Wheel();
                     wheel.X = iX;
                     wheel.Y = iY;
@@ -397,6 +431,7 @@ namespace NFMRadTools.Editing
                     wheel.RimColor = rimColor;
                     wheel.RimDepth = rimDepth;
                     wheel.RimSize = rimSize;
+                    wheel.WheelModel = wheelModel;
                     car.Wheels.Add(wheel);
                     continue;
                 }
@@ -750,7 +785,7 @@ namespace NFMRadTools.Editing
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            if(FirstColor.HasValue)
+            if (FirstColor.HasValue)
             {
                 sb.Append("1stColor(").Append(FirstColor.Value.ToString()).AppendLine(")");
             }
@@ -763,7 +798,16 @@ namespace NFMRadTools.Editing
             {
                 sb.AppendLine(RechargedStats.ToString());
             }
-            foreach(PolyGroup g in PolyGroups.Where(x => x.Mode == PolyGroupMode.Normal))
+            if (Metadata.Any()) sb.AppendLine();
+
+            foreach (string s in Metadata)
+            {
+                sb.AppendLine(s);
+            }
+
+            if (Metadata.Any()) sb.AppendLine();
+
+            foreach (PolyGroup g in PolyGroups.Where(x => x.Mode == PolyGroupMode.Normal))
             {
                 sb.AppendLine(g.ToString());
             }
@@ -781,10 +825,15 @@ namespace NFMRadTools.Editing
                 }
                 sb.AppendLine("</wheel>");
             }
-            
-            foreach (string s in Metadata)
+
+            enumerable = PolyGroups.Where(x => x.Mode == PolyGroupMode.G6Wheel);
+
+            foreach(PolyGroup g in enumerable.OrderBy(x => x.CustomWheelIndex))
             {
-                sb.AppendLine(s);
+                sb.Append("<wheelModel(").Append(g.CustomWheelIndex).AppendLine(")>");
+                sb.AppendLine();
+                sb.AppendLine(g.ToString());
+                sb.AppendLine("</wheelModel>");
             }
             
             enumerable = PolyGroups.Where(x => x.Mode == PolyGroupMode.PhyrexianWheel);
@@ -817,8 +866,12 @@ namespace NFMRadTools.Editing
                         .Append(",").Append(wheel.Z)
                         .Append(",").Append(wheel.CanSteer ? "11" : "0")
                         .Append(",").Append(wheel.Width)
-                        .Append(",").Append(wheel.Height)
-                        .Append(")");
+                        .Append(",").Append(wheel.Height);
+                    if(wheel.WheelModel.HasValue)
+                    {
+                        sb.Append(",").Append(wheel.WheelModel.Value);
+                    }
+                    sb.Append(")");
                     if (hasPhyWheels)
                     {
                         sb.Append("c");
@@ -839,16 +892,16 @@ namespace NFMRadTools.Editing
             if (hasPhyWheels)
             {
                 sb.AppendLine();
-                var groups = enumerable.GroupBy(x => phyWheelIndexMap[x.PhyrexianWheelIndex]).OrderBy(x => x.Key);
+                var groups = enumerable.GroupBy(x => phyWheelIndexMap[x.CustomWheelIndex]).OrderBy(x => x.Key);
                 foreach (var group in groups)
                 {
                     sb.Append("<phy-wheel-").Append(group.Key).AppendLine(">");
                     foreach(PolyGroup g in group)
                     {
-                        int originalIndex = g.PhyrexianWheelIndex;
-                        g.PhyrexianWheelIndex = group.Key;
+                        int originalIndex = g.CustomWheelIndex;
+                        g.CustomWheelIndex = group.Key;
                         sb.AppendLine(g.ToString());
-                        g.PhyrexianWheelIndex = originalIndex;
+                        g.CustomWheelIndex = originalIndex;
                     }
                     sb.Append("</phy-wheel-").Append(group.Key).AppendLine(">");
                 }

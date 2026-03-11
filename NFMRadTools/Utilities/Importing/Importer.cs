@@ -1,4 +1,5 @@
-﻿using NFMRadTools.Editing;
+﻿using NFMRadTools.Configuration;
+using NFMRadTools.Editing;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,9 +11,18 @@ namespace NFMRadTools.Utilities.Importing
 {
     public abstract class Importer
     {
-        public abstract bool SupportsExtension(string extension);
-        public abstract IntermediateCarModel ImportCar(string filename, double importScale);
-        protected IntermediateCarModel FinalizeImport(IntermediateCarModel model)
+        public abstract CoordinateSystem ImportCoordinates { get; }
+
+        public abstract bool SupportsExtension(ReadOnlySpan<char> extension);
+        public IntermediateCarModel ImportCar(string filename, double importScale, CoordinateSystem? coordinates = default)
+        {
+            CoordinateSystem coords = ImportCoordinates;
+            IntermediateCarModel model = ImportCar(filename, importScale);
+            if(coordinates.HasValue) coords = coordinates.Value;
+            return FinalizeImport(model, coords);
+        }
+        protected abstract IntermediateCarModel ImportCar(string filename, double importScale);
+        private IntermediateCarModel FinalizeImport(IntermediateCarModel model, CoordinateSystem coordinates)
         {
             if(model is not null)
             {
@@ -20,7 +30,7 @@ namespace NFMRadTools.Utilities.Importing
                 {
                     for(int i = 0; i < mesh.Vertices.Count; i++)
                     {
-                        mesh.Vertices[i] = mesh.Vertices[i] * new Vector3D(1.0, -1.0, 1.0);
+                        mesh.Vertices[i] = Vector3D.SwizzleCoordsBound(mesh.Vertices[i], coordinates, Program.NFMCoordinates);
                     }
                     if(string.IsNullOrWhiteSpace(mesh.Name))
                     {
@@ -32,6 +42,7 @@ namespace NFMRadTools.Utilities.Importing
                     InterMeshDefinitions defs = GetIntermediateMeshDefinitions(mesh);
                     mesh.Mode = defs.Mode;
                     mesh.WheelDefinition = defs.WheelDefinition;
+                    mesh.G6WheelIndex = defs.G6WheelIndex;
                 }
             }
             return model;
@@ -63,6 +74,22 @@ namespace NFMRadTools.Utilities.Importing
                 defs.Mode = IntermediateMeshMode.PhyrexianWheel;
                 reqLength = "phy".Length;
             }
+            else if(name.StartsWith("g6", StringComparison.OrdinalIgnoreCase))
+            {
+                defs.Mode = IntermediateMeshMode.G6Wheel;
+                name = name.Slice("g6".Length);
+                if (name[0] == '-' || name[0] == '_')
+                {
+                    ReadOnlySpan<char> nameSlice = name.Slice(1);
+                    int numbers = nameSlice.GetLengthOfNumericCharactersFromIndex(0);
+                    if(numbers > 0)
+                    {
+                        defs.G6WheelIndex = int.Parse(nameSlice.Slice(0, numbers));
+                        name = name.Slice(numbers + 1);
+                    }
+                }
+                reqLength = 0;
+            }
             else
             {
                 reqLength = 0;
@@ -92,6 +119,7 @@ namespace NFMRadTools.Utilities.Importing
         {
             public IntermediateMeshMode Mode { get; set; }
             public IntermediateMeshWheelDefinition WheelDefinition { get; set; }
+            public int? G6WheelIndex { get; set; }
         }
     }
 }

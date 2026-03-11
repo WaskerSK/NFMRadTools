@@ -38,21 +38,64 @@ namespace NFMRadTools.Utilities.Importing
                     case IntermediateMeshMode.DragShotWheel:
                         if (hasSeenDragShotWheel)
                         {
-                            other.Wheels.Add(GetWheel(cylinder, mesh.WheelDefinition, mesh.Mode));
+                            other.Wheels.Add(GetWheel(cylinder, mesh));
                             continue;
                         }
                         hasSeenDragShotWheel = true;
-                        Wheel dsWheelVanillaDef = GetWheel(cylinder, mesh.WheelDefinition, mesh.Mode);
+                        Wheel dsWheelVanillaDef = GetWheel(cylinder, mesh);
                         other.DragShotWheelDefinition.Radius = (int)cylinder.NFMDsCorrectedRadius;
                         other.DragShotWheelDefinition.Depth = int.Abs(dsWheelVanillaDef.Width);
                         other.Wheels.Add(dsWheelVanillaDef);
                         break;
                     case IntermediateMeshMode.PhyrexianWheel:
                         currentPhyIndex++;
-                        other.Wheels.Add(GetWheel(cylinder, mesh.WheelDefinition, mesh.Mode));
+                        other.Wheels.Add(GetWheel(cylinder, mesh));
                         break;
+                    case IntermediateMeshMode.G6Wheel:
+                        {
+                            Wheel g6Wheel = GetWheel(cylinder, mesh);
+                            other.Wheels.Add(g6Wheel);
+                            if(mesh.G6WheelIndex.HasValue)
+                            {
+                                if(other.PolyGroups.Any(x => x.Mode == PolyGroupMode.G6Wheel && x.CustomWheelIndex == mesh.G6WheelIndex))
+                                    continue;
+                                break;
+                            }
+                            int indexOfSelf = -1;
+                            foreach(var g6MeshEntry in Meshes.Where(x => x.Mode == IntermediateMeshMode.G6Wheel).Index())
+                            {
+                                if (g6MeshEntry.Item == mesh)
+                                {
+                                    indexOfSelf = g6MeshEntry.Index;
+                                    break;
+                                }
+                            }
+                            if(indexOfSelf > 0)
+                            {
+                                bool found = false;
+                                foreach(IntermediateMesh prevG6Mesh in Meshes.Where(x => x.Mode == IntermediateMeshMode.G6Wheel))
+                                {
+                                    if(mesh.IsMeshIdenticalTo(prevG6Mesh, 0.5))
+                                    {
+                                        g6Wheel.WheelModel = prevG6Mesh.G6WheelIndex;
+                                        mesh.G6WheelIndex = prevG6Mesh.G6WheelIndex;
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (found) continue;
+                            }
+                            int highestIndex = -1;
+                            foreach (PolyGroup g in other.PolyGroups.Where(x => x.Mode == PolyGroupMode.G6Wheel))
+                            {
+                                highestIndex = int.Max(g.CustomWheelIndex, highestIndex);
+                            }
+                            mesh.G6WheelIndex = highestIndex + 1;
+                            g6Wheel.WheelModel = mesh.G6WheelIndex;
+                            break;
+                        }
                     case IntermediateMeshMode.VanillaWheel:
-                        other.Wheels.Add(GetWheel(cylinder, mesh.WheelDefinition, mesh.Mode));
+                        other.Wheels.Add(GetWheel(cylinder, mesh));
                         continue;
                 }
                 PolyGroup currentPolyGroup = null;
@@ -73,6 +116,7 @@ namespace NFMRadTools.Utilities.Importing
                                 if(invertX)
                                     v = v * new Vector3D(-1.0, 1.0, 1.0);
                                 break;
+                            case IntermediateMeshMode.G6Wheel:
                             case IntermediateMeshMode.PhyrexianWheel:
                                 v = v - cylinder.Location;
                                 break;
@@ -91,7 +135,7 @@ namespace NFMRadTools.Utilities.Importing
                             mergeVerts = true;
                             break;
                         case VertexMergingRule.Wheels:
-                            mergeVerts = mesh.Mode == IntermediateMeshMode.DragShotWheel || mesh.Mode == IntermediateMeshMode.PhyrexianWheel;
+                            mergeVerts = mesh.Mode == IntermediateMeshMode.DragShotWheel || mesh.Mode == IntermediateMeshMode.PhyrexianWheel || mesh.Mode == IntermediateMeshMode.G6Wheel;
                             break;
                     }
                     if(mergeVerts)
@@ -117,7 +161,9 @@ namespace NFMRadTools.Utilities.Importing
                             currentPolyGroup.Name = face.Material.Name;
                             currentPolyGroup.Mode = (PolyGroupMode)mesh.Mode;
                             if (currentPolyGroup.Mode == PolyGroupMode.PhyrexianWheel)
-                                currentPolyGroup.PhyrexianWheelIndex = currentPhyIndex;
+                                currentPolyGroup.CustomWheelIndex = currentPhyIndex;
+                            else if (currentPolyGroup.Mode == PolyGroupMode.G6Wheel)
+                                currentPolyGroup.CustomWheelIndex = (int)mesh.G6WheelIndex;
                             other.PolyGroups.Add(currentPolyGroup);
                         }
                     }
@@ -132,14 +178,14 @@ namespace NFMRadTools.Utilities.Importing
             if(group is null) return false;
             if((int)group.Mode != (int)mesh.Mode) return false;
             if(!m.Name.Equals(group.Name, StringComparison.OrdinalIgnoreCase)) return false;
-            if(group.Mode == PolyGroupMode.PhyrexianWheel) return group.PhyrexianWheelIndex == phyIndex;
+            if(group.Mode == PolyGroupMode.PhyrexianWheel) return group.CustomWheelIndex == phyIndex;
             return true;
         }
 
-        private static Wheel GetWheel(Cylinder c, IntermediateMeshWheelDefinition wheelDef, IntermediateMeshMode mode)
+        private static Wheel GetWheel(Cylinder c, IntermediateMesh mesh)
         {
-            Wheel wheel = c.ConvertToNFMWheel(mode);
-            switch(wheelDef)
+            Wheel wheel = c.ConvertToNFMWheel(mesh.Mode);
+            switch(mesh.WheelDefinition)
             {
                 case IntermediateMeshWheelDefinition.Auto: break;
                 case IntermediateMeshWheelDefinition.BackWheel:
@@ -148,6 +194,10 @@ namespace NFMRadTools.Utilities.Importing
                 case IntermediateMeshWheelDefinition.FrontWheel:
                     wheel.CanSteer = true;
                     break;
+            }
+            if(mesh.Mode == IntermediateMeshMode.G6Wheel)
+            {
+                wheel.WheelModel = mesh.G6WheelIndex;
             }
             return wheel;
         }

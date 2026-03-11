@@ -44,7 +44,7 @@ namespace NFMRadTools.Editing
             }
         }
 
-        public int PhyrexianWheelIndex { get; set; }
+        public int CustomWheelIndex { get; set; }
 
         public PolyGroup()
         {
@@ -65,7 +65,7 @@ namespace NFMRadTools.Editing
             if(polygon.PolyGroup == this) return false;
             _polygons.Add(polygon);
             polygon.PolyGroup = this;
-            if (Mode == PolyGroupMode.PhyrexianWheel)
+            if (Mode == PolyGroupMode.PhyrexianWheel || Mode == PolyGroupMode.G6Wheel)
                 polygon.AlternativePolyMarkup = true;
             return true;
         }
@@ -75,7 +75,7 @@ namespace NFMRadTools.Editing
             if(polygons is null) return false;
             IEnumerable<Polygon> en = polygons.Where(x => x is not null).Where(x => x.PolyGroup != this);
             _polygons.AddRange(polygons);
-            bool altMarkup = Mode == PolyGroupMode.PhyrexianWheel;
+            bool altMarkup = Mode == PolyGroupMode.PhyrexianWheel || Mode == PolyGroupMode.G6Wheel;
             foreach(Polygon p in en)
             {
                 p.PolyGroup = this;

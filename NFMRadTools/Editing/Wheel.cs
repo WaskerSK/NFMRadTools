@@ -22,6 +22,7 @@ namespace NFMRadTools.Editing
         public Color RimColor { get; set; }
         public int RimSize { get; set; }
         public int RimDepth { get; set; }
+        public int? WheelModel { get; set; } //g6 wheels only
 
         public Wheel()
         {
@@ -38,7 +39,12 @@ namespace NFMRadTools.Editing
                 .Append(",").Append(RimSize)
                 .Append(",").Append(RimDepth)
                 .AppendLine(")");
-            sb.AppendLine($"w({X},{Y},{Z},{(CanSteer ? "11" : "0")},{Width},{Height})");
+            string g6Part = string.Empty;
+            if(WheelModel.HasValue)
+            {
+                g6Part = $",{WheelModel.Value}";
+            }
+            sb.AppendLine($"w({X},{Y},{Z},{(CanSteer ? "11" : "0")},{Width},{Height}{g6Part})");
             return sb.ToString();
         }
 

@@ -36,6 +36,7 @@ namespace System
             if (span.Length <= 0 || index >= span.Length) return 0;
             int i = 0;
             if ((uint)index >= (uint)span.Length) return i;
+            if (span[index] == '.') return i;
             if(span[index] == '-')
             {
                 i++;

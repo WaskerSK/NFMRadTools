@@ -70,7 +70,7 @@ namespace NFMRadTools.Editing
             }
             if(PolyGroup.Mode == PolyGroupMode.PhyrexianWheel)
             {
-                sb.Append("wheel(").Append(PolyGroup.PhyrexianWheelIndex).AppendLine(")");
+                sb.Append("wheel(").Append(PolyGroup.CustomWheelIndex).AppendLine(")");
             }
             sb.AppendLine();
             foreach (Vertex v in Vertices)

@@ -1,4 +1,5 @@
-﻿using NFMRadTools.Editing;
+﻿using NFMRadTools.Configuration;
+using NFMRadTools.Editing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,16 +8,24 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace NFMRadTools.Utilities.Importing
 {
-    public sealed class ObjImporter : Importer
+    public sealed class ObjImporter : Importer, IConfigurable
     {
+        private const string ConfigEntryName = "importer-obj";
         private const double ImportScaleConversionConstant = 10.0;
         public ObjImporter() { }
 
-        public override IntermediateCarModel ImportCar(string filename, double importScale = 1.0)
+        public string EntryName => ConfigEntryName;
+
+        public static CoordinateSystem DefaultCoordinateSystem => new CoordinateSystem(Direction.Left, Direction.Up, Direction.Back);
+
+        public override CoordinateSystem ImportCoordinates => CoordinateSystem.Parse(Program.Config.Settings[ConfigEntryName][nameof(ImportCoordinates)]);
+
+        protected override IntermediateCarModel ImportCar(string filename, double importScale = 1.0)
         {
             Debug.Assert(filename is not null);
             Debug.Assert(filename.EndsWith(".obj", StringComparison.OrdinalIgnoreCase));
@@ -169,9 +178,9 @@ namespace NFMRadTools.Utilities.Importing
                                     double dR = double.Parse(r, CultureInfo.InvariantCulture);
                                     double dG = double.Parse(g, CultureInfo.InvariantCulture);
                                     double dB = double.Parse(b, CultureInfo.InvariantCulture);
-                                    dR = ColorEditing.LinearsRGBTosRGB(dR);
-                                    dG = ColorEditing.LinearsRGBTosRGB(dG);
-                                    dB = ColorEditing.LinearsRGBTosRGB(dB);
+                                    dR = ColorEditing.LinearRGBTosRGB(dR);
+                                    dG = ColorEditing.LinearRGBTosRGB(dG);
+                                    dB = ColorEditing.LinearRGBTosRGB(dB);
                                     byte R = (byte)double.Round(byte.MaxValue * dR, MidpointRounding.AwayFromZero);
                                     byte G = (byte)double.Round(byte.MaxValue * dG, MidpointRounding.AwayFromZero);
                                     byte B = (byte)double.Round(byte.MaxValue * dB, MidpointRounding.AwayFromZero);
@@ -203,12 +212,24 @@ namespace NFMRadTools.Utilities.Importing
             {
                 model.Meshes.Add(entry.Value);
             }
-            return FinalizeImport(model);
+            return model;
         }
 
-        public override bool SupportsExtension(string extension)
+        public override bool SupportsExtension(ReadOnlySpan<char> extension)
         {
-            return string.Equals(extension, "obj", StringComparison.OrdinalIgnoreCase) || string.Equals(extension, ".obj", StringComparison.OrdinalIgnoreCase);
+            return extension.Equals("obj", StringComparison.OrdinalIgnoreCase) || extension.Equals(".obj", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static void RegisterConfigEntry(OrderedDictionary<string, ConfigurableEntry> settings)
+        {
+            ArgumentNullException.ThrowIfNull(settings);
+            ConfigurableEntry values = null;
+            if (!settings.TryGetValue(ConfigEntryName, out values))
+            {
+                values = new ConfigurableEntry();
+                settings.Add(ConfigEntryName, values);
+            }
+            values.TryAdd(nameof(ImportCoordinates), DefaultCoordinateSystem.ToString());
         }
     }
 }

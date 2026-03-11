@@ -24,9 +24,19 @@ namespace NFMRadTools.Commanding
                 return AlternativeEnumParser.TryParse(type, value, true, out result);
             }
             Type elementType = type;
+            bool isNullable = false;
             if(type.IsArray)
             {
                 elementType = type.GetElementType();
+            }
+            else
+            {
+                Type nullableT = Nullable.GetUnderlyingType(type);
+                if(nullableT is not null)
+                {
+                    elementType = nullableT;
+                    isNullable = true;
+                }
             }
             if (elementType == typeof(string)) throw new NotSupportedException("String arrays are currently not supported.");
             Type genericType = typeof(IParsable<>).MakeGenericType(elementType);
@@ -75,6 +85,11 @@ namespace NFMRadTools.Commanding
                     {
                         object[] args = [value, null, null];
                         object parseBool = tryparse.Invoke(null, args);
+                        if(isNullable)
+                        {
+                            object parsedValue = args[2];
+                            args[2] = Activator.CreateInstance(elementType, parsedValue);
+                        }
                         result = args[2];
                         return (bool)parseBool;
                     }

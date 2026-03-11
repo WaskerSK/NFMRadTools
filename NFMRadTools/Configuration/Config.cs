@@ -7,21 +7,24 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace NFMRadTools
+namespace NFMRadTools.Configuration
 {
     public class Config
     {
+        public static readonly JsonSerializerOptions ConfigSerializerOptions = new JsonSerializerOptions(JsonSerializerOptions.Default) { WriteIndented = true };
         public string CarDirectory { get; set; }
         public string ImportDirectory { get; set; }
 
+        public OrderedDictionary<string, ConfigurableEntry> Settings { get; set; } = new OrderedDictionary<string, ConfigurableEntry>();
+
         public void Save(string ConfigPath)
         {
-            ArgumentNullException.ThrowIfNullOrWhiteSpace(ConfigPath);
+            ArgumentException.ThrowIfNullOrWhiteSpace(ConfigPath);
             if(!ConfigPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentException("Config file must be a .json file.");
             }
-            File.WriteAllText(ConfigPath, JsonSerializer.Serialize<Config>(this, new JsonSerializerOptions() { WriteIndented = true }));
+            File.WriteAllText(ConfigPath, JsonSerializer.Serialize(this, ConfigSerializerOptions));
         }
     }
 

@@ -1247,12 +1247,15 @@ namespace NFMRadTools.Commanding
             string File - A full path to a file or a file name of the model.
             ImportMode Mode (optional) - An import mode method to use. New to create a new car or Merge to combine with currently loaded car.
             double Scale (optional) - The scale of the car when imported.
+            CoordinateSystem Coordinates (optional) - The coordinate system the imported car was made in/exported with.
             string RechargedStatsPreset (optional) - Name of the recharged stats preset to use.
             AutoColoringMode ColoringMode (optional) - The auto coloring mode to use.
             VertexMergingRule VertexMergingRule (optional) - Rule that decides on what polygons to merge vertices removing duplicate points.
             =Remarks=
             If a file name is provided without a full path, the import folder will be used to look for the file.
             Leave preset name empty or type "null" or "none" to remove recharged stats.
+            Leave coordinates empty to use default coordinate system of given importer,
+            otherwise specify in a Forward/Right/Up axis format. Example: XYZ.
             Available merging rules:
             None - Do not merge verts.
             All - Merges verts on all polygons.
@@ -1264,7 +1267,7 @@ namespace NFMRadTools.Commanding
             Edge - Scanes colors based on length of edges.
             Surface - Currently not implemented. Scans colors based on surface area of polygons.
             """)]
-        public static void Import(string File, ImportMode Mode = ImportMode.New, double Scale = 1.0, string RechargedStatsPreset = nameof(RechargedStatPresets.High_Rider), AutoColoringMode ColoringMode = AutoColoringMode.Polygons, VertexMergingRule VertexMergingRule = VertexMergingRule.All)
+        public static void Import(string File, ImportMode Mode = ImportMode.New, double Scale = 1.0, CoordinateSystem? Coordinates = default, string RechargedStatsPreset = nameof(RechargedStatPresets.High_Rider), AutoColoringMode ColoringMode = AutoColoringMode.Polygons, VertexMergingRule VertexMergingRule = VertexMergingRule.All)
         {
             if(Mode < 0 || Mode > ImportMode.Merge)
             {
@@ -1300,7 +1303,7 @@ namespace NFMRadTools.Commanding
             IntermediateCarModel importedCar = null;
             try
             {
-                importedCar = imp.ImportCar(File, Scale);
+                importedCar = imp.ImportCar(File, Scale, Coordinates);
             }
             catch(Exception ex)
             {
@@ -1377,6 +1380,12 @@ namespace NFMRadTools.Commanding
                 proc.WaitForExit();
             }
             Logger.Info("Car code was copied to clipboard.");
+        }
+        [Command(CommandName = "restart")]
+        [Description("""Restarts the tools. Usefull if you have made changes in config outside of the tool.""")]
+        public static void Restart()
+        {
+            throw RestartException.Instance;
         }
     }
 }

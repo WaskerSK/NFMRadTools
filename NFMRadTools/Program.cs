@@ -1,6 +1,8 @@
 ﻿using NFMRadTools.Commanding;
+using NFMRadTools.Configuration;
 using NFMRadTools.Editing;
 using NFMRadTools.Utilities;
+using NFMRadTools.Utilities.Importing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,11 +27,14 @@ namespace NFMRadTools
         public const string NFMCarExtension = ".rad";
         public static SortedDictionary<string, Command> CommandList = new SortedDictionary<string, Command>(StringComparer.OrdinalIgnoreCase);
         public static NFMCar CurrentCar = null;
+        public static readonly CoordinateSystem NFMCoordinates = new CoordinateSystem(Direction.Right, Direction.Down, Direction.Back);
+        
         static void Main(string[] args)
         {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             string configPath = Path.Combine(Environment.CurrentDirectory, "Config.json");
+            Init:
             try
             {
                 InitConfig(configPath);
@@ -40,6 +45,8 @@ namespace NFMRadTools
                 Logger.Error("Fatal error: Failed to create or load config.");
                 return;
             }
+            InitConfigurables();
+            Config.Save(configPath);
             InitCommands();
             Logger.Info("Type help to list commands.");
             Debug.Assert(Config is not null);
@@ -89,7 +96,24 @@ namespace NFMRadTools
                         Environment.Exit(exitCode);
                         return;
                     }
+                    if(e is RestartException || e.InnerException is RestartException)
+                    {
+                        goto Init;
+                    }
                     Logger.Error(e.ToString());
+                }
+            }
+        }
+
+        static void InitConfigurables()
+        {
+            if (Config is null) throw new InvalidOperationException();
+            if (Config.Settings is null) throw new InvalidOperationException();
+            foreach(Type t in Assembly.GetExecutingAssembly().GetTypes())
+            {
+                if(t.IsAssignableTo(typeof(IConfigurable)) && !t.IsAbstract)
+                {
+                    t.GetMethod(nameof(IConfigurable.RegisterConfigEntry), BindingFlags.Static | BindingFlags.Public).Invoke(null, [Config.Settings]);
                 }
             }
         }
@@ -211,8 +235,7 @@ namespace NFMRadTools
                 }
                 Logger.Error($"Folder \"{s}\" was not found.");
             }
-            string json = JsonSerializer.Serialize<Config>(Config, new JsonSerializerOptions() { WriteIndented = true });
-            File.WriteAllText(configPath, json);
+            Config.Save(configPath);
         }
 
     }

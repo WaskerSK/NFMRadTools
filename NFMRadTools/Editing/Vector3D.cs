@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NFMRadTools.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -97,11 +98,45 @@ namespace NFMRadTools.Editing
         public static double Length(Vector3D Value) => double.Sqrt(Sum(Value * Value));
         public static Vector3D Mid(Vector3D A, Vector3D B) => A + Distance(A, B) / new Vector3D(2.0);
         public static Vector3D Cross(Vector3D A, Vector3D B) => new Vector3D(A.Y * B.Z - A.Z * B.Y, A.Z * B.X - A.X * B.Z, A.X * B.Y - A.Y * B.X);
-        public static Vector3D PerAxisMid(Vector3D A, Vector3D B)
+        public static Vector3D Swizzle(Vector3D Value, Axis XAxis = Axis.X, Axis YAxis = Axis.Y, Axis ZAxis = Axis.Z)
         {
-            return new Vector3D(A.X + double.Abs(A.X - B.X) / 2.0,
-                A.Y + double.Abs(A.Y - B.Y) / 2.0,
-                A.Z + double.Abs(A.Z - B.Z) / 2.0);
+            double x = GetSwizzledValue(Value, XAxis);
+            double y = GetSwizzledValue(Value, YAxis);
+            double z = GetSwizzledValue(Value, ZAxis);
+            return new Vector3D(x, y, z);
+        }
+        public static Vector3D SwizzleCoordsBound(Vector3D Value, CoordinateSystem ValueCoordinates, CoordinateSystem DesiredCoordinates)
+        {
+            if(ValueCoordinates == DesiredCoordinates) return Value;
+            Direction cX = DesiredCoordinates.XAxis;
+            Direction cY = DesiredCoordinates.YAxis;
+            Direction cZ = DesiredCoordinates.ZAxis;
+
+            double x = GetBoundSwizzledValue(Value, ValueCoordinates, cX);
+            double y = GetBoundSwizzledValue(Value, ValueCoordinates, cY);
+            double z = GetBoundSwizzledValue(Value, ValueCoordinates, cZ);
+
+            return new Vector3D(x, y, z);
+        }
+        private static double GetSwizzledValue(Vector3D value, Axis axis)
+        {
+            switch(axis)
+            {
+                case Axis.X: return value.X;
+                case Axis.Y: return value.Y;
+                case Axis.Z: return value.Z;
+                case Axis.NX: return value.X * -1.0;
+                case Axis.NY: return value.Y * -1.0;
+                case Axis.NZ: return value.Z * -1.0;
+            }
+            throw new ArgumentException();
+        }
+        private static double GetBoundSwizzledValue(Vector3D value, CoordinateSystem boundCoords, Direction direction)
+        {
+            Axis axis = boundCoords.GetDirectionAxis(direction);
+            if (!boundCoords.GetAxisDirection(axis).EqualSign(direction))
+                axis = axis.ToNegative();
+            return GetSwizzledValue(value, axis);
         }
     }
 }

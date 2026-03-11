@@ -11,7 +11,8 @@ namespace NFMRadTools.Editing
     public enum PolyGroupMode
     {
         [EnumAlternativeName("n")]
-        Normal,
+        [EnumAlternativeName("norm")]
+        Normal = 0,
         [EnumAlternativeName("dsw")]
         [EnumAlternativeName("dscw")]
         [EnumAlternativeName("ds-cw")]
@@ -19,7 +20,7 @@ namespace NFMRadTools.Editing
         [EnumAlternativeName("ds-w")]
         [EnumAlternativeName("dragshot")]
         [EnumAlternativeName("dragshotw")]
-        DragShotWheel,
+        DragShotWheel = 1,
         [EnumAlternativeName("phy")]
         [EnumAlternativeName("phycw")]
         [EnumAlternativeName("phy-cw")]
@@ -27,6 +28,12 @@ namespace NFMRadTools.Editing
         [EnumAlternativeName("phy-w")]
         [EnumAlternativeName("phyrexian")]
         [EnumAlternativeName("phyrexianw")]
-        PhyrexianWheel
+        PhyrexianWheel = 2,
+        [EnumAlternativeName("g6")]
+        [EnumAlternativeName("g6w")]
+        [EnumAlternativeName("g6cw")]
+        [EnumAlternativeName("g6-w")]
+        [EnumAlternativeName("g6-cw")]
+        G6Wheel = 3
     }
 }
