@@ -25,7 +25,7 @@ namespace NFMRadTools.Utilities.Importing
                     _info = new IntermediateMeshInfo(this);
                 }
                 else
-                    MeshInfo.Update();
+                    _info.Update();
                 return _info;
             }
         }

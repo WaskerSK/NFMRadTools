@@ -78,14 +78,17 @@ namespace NFMRadTools.Utilities.Importing
             {
                 defs.Mode = IntermediateMeshMode.G6Wheel;
                 name = name.Slice("g6".Length);
-                if (name[0] == '-' || name[0] == '_')
+                if(!(name.IsEmpty || name.IsWhiteSpace()))
                 {
-                    ReadOnlySpan<char> nameSlice = name.Slice(1);
-                    int numbers = nameSlice.GetLengthOfNumericCharactersFromIndex(0);
-                    if(numbers > 0)
+                    if (name[0] == '-' || name[0] == '_')
                     {
-                        defs.G6WheelIndex = int.Parse(nameSlice.Slice(0, numbers));
-                        name = name.Slice(numbers + 1);
+                        ReadOnlySpan<char> nameSlice = name.Slice(1);
+                        int numbers = nameSlice.GetLengthOfNumericCharactersFromIndex(0);
+                        if (numbers > 0)
+                        {
+                            defs.G6WheelIndex = int.Parse(nameSlice.Slice(0, numbers));
+                            name = name.Slice(numbers + 1);
+                        }
                     }
                 }
                 reqLength = 0;
