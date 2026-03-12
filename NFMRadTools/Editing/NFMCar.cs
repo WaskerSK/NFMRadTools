@@ -869,7 +869,7 @@ namespace NFMRadTools.Editing
                         .Append(",").Append(wheel.Y)
                         .Append(",").Append(wheel.Z)
                         .Append(",").Append(wheel.CanSteer ? "11" : "0")
-                        .Append(",").Append(int.Abs(wheel.Width))
+                        .Append(",").Append(wheel.WheelModel.HasValue ? int.Abs(wheel.Width) : wheel.Width)
                         .Append(",").Append(wheel.Height);
                     if(wheel.WheelModel.HasValue)
                     {
