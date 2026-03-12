@@ -14,7 +14,7 @@ using System.Text;
 using System.Text.Json;
 using System.Xml;
 
-[assembly: DevMode(false)]
+[assembly: DevMode(true)]
 
 namespace NFMRadTools
 {

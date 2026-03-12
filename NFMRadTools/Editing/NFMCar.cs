@@ -828,14 +828,18 @@ namespace NFMRadTools.Editing
 
             enumerable = PolyGroups.Where(x => x.Mode == PolyGroupMode.G6Wheel);
 
-            foreach(PolyGroup g in enumerable.OrderBy(x => x.CustomWheelIndex))
+            if(enumerable.Any())
             {
-                sb.Append("<wheelModel(").Append(g.CustomWheelIndex).AppendLine(")>");
-                sb.AppendLine();
-                sb.AppendLine(g.ToString());
-                sb.AppendLine("</wheelModel>");
+                foreach (IGrouping<int, PolyGroup> group in enumerable.GroupBy(x => x.CustomWheelIndex).OrderBy(x => x.Key))
+                {
+                    sb.Append("<wheelModel(").Append(group.Key).AppendLine(")>");
+                    sb.AppendLine();
+                    foreach (PolyGroup g in group)
+                        sb.AppendLine(g.ToString());
+                    sb.AppendLine("</wheelModel>");
+                }
             }
-            
+
             enumerable = PolyGroups.Where(x => x.Mode == PolyGroupMode.PhyrexianWheel);
             bool hasPhyWheels = enumerable.Any();
             Dictionary<int, int> phyWheelIndexMap = null;

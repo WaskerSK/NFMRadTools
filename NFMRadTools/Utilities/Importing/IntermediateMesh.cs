@@ -40,12 +40,11 @@ namespace NFMRadTools.Utilities.Importing
             if(other is null) return false;
             if(other.Vertices.Count != this.Vertices.Count) return false;
             if(other.Faces.Count != this.Faces.Count) return false;
-            List<Vector3D> A_orderedVerts = MeshInfo.OrderedLocationOffsetVertices;
-            List<Vector3D> B_orderedVerts = other.MeshInfo.OrderedLocationOffsetVertices;
+            List<Vertex> A_orderedVerts = MeshInfo.OrderedLocationOffsetVertices;
+            List<Vertex> B_orderedVerts = other.MeshInfo.OrderedLocationOffsetVertices;
             for(int i = 0; i < this.Vertices.Count; i++)
             {
-                double distance = Vector3D.Length(Vector3D.Distance(A_orderedVerts[i], B_orderedVerts[i]));
-                if(distance > errorTolerance)
+                if (A_orderedVerts[i] != B_orderedVerts[i])
                     return false;
             }
             return true;
@@ -54,13 +53,13 @@ namespace NFMRadTools.Utilities.Importing
         private sealed class IntermediateMeshInfo
         {
             public IntermediateMesh Mesh { get; }
-            public List<Vector3D> OrderedLocationOffsetVertices { get; }
+            public List<Vertex> OrderedLocationOffsetVertices { get; }
             public Cylinder Cylinder { get; private set; }
             public Vector3D MeshCenterLocation { get; private set; }
             public IntermediateMeshInfo(IntermediateMesh mesh)
             {
                 Mesh = mesh;
-                OrderedLocationOffsetVertices = new List<Vector3D>();
+                OrderedLocationOffsetVertices = new List<Vertex>();
                 Update();
             }
 
@@ -78,7 +77,8 @@ namespace NFMRadTools.Utilities.Importing
                 OrderedLocationOffsetVertices.EnsureCapacity(Mesh.Vertices.Count);
                 for(int i = 0; i < Mesh.Vertices.Count; i++)
                 {
-                    OrderedLocationOffsetVertices.Add((Mesh.Vertices[i] - MeshCenterLocation) * (Mesh.Vertices[i].X < 0 ? new Vector3D(-1.0, 1.0, 1.0) : new Vector3D(1.0)));
+                    Vector3D v = (Mesh.Vertices[i] - MeshCenterLocation) * (MeshCenterLocation.X < 0 ? new Vector3D(-1.0, 1.0, 1.0) : new Vector3D(1.0));
+                    OrderedLocationOffsetVertices.Add((Vertex)v);
                 }
                 OrderedLocationOffsetVertices.Sort(CompareVertexLocations);
             }
@@ -119,7 +119,7 @@ namespace NFMRadTools.Utilities.Importing
                 Cylinder = new Cylinder(location, /*Vector3D.Zero,*/ radius, width);
             }
 
-            private static int CompareVertexLocations(Vector3D x, Vector3D y)
+            private static int CompareVertexLocations(Vertex x, Vertex y)
             {
                 int cmp = x.X.CompareTo(y.X);
                 if(cmp != 0) return cmp;
