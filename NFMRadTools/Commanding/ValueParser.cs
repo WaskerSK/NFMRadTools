@@ -88,7 +88,7 @@ namespace NFMRadTools.Commanding
                         if(isNullable)
                         {
                             object parsedValue = args[2];
-                            args[2] = Activator.CreateInstance(elementType, parsedValue);
+                            args[2] = Activator.CreateInstance(type, parsedValue);
                         }
                         result = args[2];
                         return (bool)parseBool;
