@@ -31,6 +31,7 @@ namespace NFMRadTools.Editing
                         break;
                     case PolyGroupMode.DragShotWheel: break;
                     case PolyGroupMode.PhyrexianWheel:
+                    case PolyGroupMode.G6Wheel:
                         alternativePoly = true;
                         break;
                 }
