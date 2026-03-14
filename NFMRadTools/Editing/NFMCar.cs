@@ -584,7 +584,7 @@ namespace NFMRadTools.Editing
                     if (car.RechargedStats is null) car.RechargedStats = new RechargedStats();
                     RechargedStats stats = car.RechargedStats;
                     line = line.Slice("airc(".Length).TrimStart();
-                    stats.Aircontrol = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    stats.Aircontrol = double.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
                     continue;
                 }
                 if (line.StartsWith("turn("))

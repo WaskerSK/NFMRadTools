@@ -15,7 +15,7 @@ namespace NFMRadTools.Editing
         public ref Gearbox<double> Acelf => ref acelf; //acceleration
         public int Handbrake { get; set; } //hanbrake power
         public double Airspeed { get; set; } // stunt rotation speed
-        public int Aircontrol { get; set; } //air control
+        public double Aircontrol { get; set; } //air control
         public int Turnspeed { get; set; } //turn speed
         public double Grip { get; set; } //ground grip
         public double Bounce { get; set; } //bounce on landing/hit
