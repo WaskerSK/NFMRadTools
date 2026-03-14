@@ -277,7 +277,23 @@ namespace NFMRadTools.Editing
                     car.SecondColor = c;
                     continue;
                 }
-                if(line.StartsWith("<wheel")) //begin DragShot wheel
+                if (line.StartsWith("<wheelModel(")) // begin G6 wheel
+                {
+                    currentMode = PolyGroupMode.G6Wheel;
+                    hasG6Wheels = true;
+                    currentGroup = null;
+                    line = line.Slice("<wheelModel(".Length);
+                    customWheelIndex = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
+                    continue;
+                }
+                if (line.StartsWith("</wheelModel>"))
+                {
+                    currentMode = PolyGroupMode.Normal;
+                    currentGroup = null;
+                    customWheelIndex = null;
+                    continue;
+                }
+                if (line.StartsWith("<wheel")) //begin DragShot wheel
                 {
                     currentGroup = null;
                     currentMode = PolyGroupMode.DragShotWheel;
@@ -312,22 +328,6 @@ namespace NFMRadTools.Editing
                 {
                     currentMode = PolyGroupMode.Normal;
                     currentGroup = null;
-                    continue;
-                }
-                if(line.StartsWith("<wheelModel(")) // begin G6 wheel
-                {
-                    currentMode = PolyGroupMode.G6Wheel;
-                    hasG6Wheels = true;
-                    currentGroup = null;
-                    line = line.Slice("<wheelModel(".Length);
-                    customWheelIndex = int.Parse(line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0)));
-                    continue;
-                }
-                if(line.StartsWith("</wheelModel>"))
-                {
-                    currentMode = PolyGroupMode.Normal;
-                    currentGroup = null;
-                    customWheelIndex = null;
                     continue;
                 }
                 if(line.StartsWith("wheel("))
