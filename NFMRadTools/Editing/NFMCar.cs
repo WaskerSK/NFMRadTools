@@ -305,6 +305,7 @@ namespace NFMRadTools.Editing
                     DoNTimes doNTimes = new DoNTimes(2);
                     while(doNTimes.Next())
                     {
+                        if(choiceIndex == -1) throw new FormatException($"Invalid tag found at line [{sr.Line}]: {sr.LastReadLine.ToString()}");
                         if (choiceIndex == 0) //radius
                         {
                             line = line.Slice("radius=\"".Length);
@@ -319,6 +320,7 @@ namespace NFMRadTools.Editing
                             depth = int.Parse(depthChars);
                             line = line.Slice(depthChars.Length + 1).TrimStart();
                         }
+                        choiceIndex = SpanStartsWithChoiceIndex(line, "radius=\"", "depth=\"");
                     }
                     car.DragShotWheelDefinition.Radius = radius;
                     car.DragShotWheelDefinition.Depth = depth;
@@ -408,6 +410,7 @@ namespace NFMRadTools.Editing
                     int indexOfFourthComma = line.IndexOf(",");
                     ReadOnlySpan<char> width = line.Slice(indexOfFourthComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFourthComma + 1));
                     int iWidth = int.Parse(width);
+                    line = line.Slice(indexOfFourthComma + 1);
                     int indexOfFifthComma = line.IndexOf(',');
                     ReadOnlySpan<char> height = line.Slice(indexOfFifthComma + 1, line.GetLengthOfNumericCharactersFromIndex(indexOfFifthComma + 1));
                     int iHeight = int.Parse(height);
