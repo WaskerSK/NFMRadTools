@@ -265,33 +265,6 @@ namespace NFMRadTools.Commanding
             Logger.Info($"New group created: [{Program.CurrentCar.PolyGroups.Count - 1}] - {g.Name} - Mode: {Mode}");
         }
 
-        [Command(CommandName = "car.groups.setmode", VerifyCarLoaded = true)]
-        [Description("""
-            Changes the polygroup mode of existing groups.
-            =Inputs=
-            int[] GroupIndexes - Zero based indexes of the groups which to change separated by ;.
-            PolyGroupMode NewMode - The new mode of the polygroups.
-            """)]
-        public static void ChangePolyGroupMode(int[] GroupIndexes, PolyGroupMode NewMode)
-        {
-            if (GroupIndexes.Length <= 0)
-            {
-                Logger.Warning("No indexes provided. No groups were affected.");
-                return;
-            }
-            foreach (int GroupIndex in GroupIndexes)
-            {
-                PolyGroup pg = Program.CurrentCar.PolyGroups[GroupIndex];
-                if(pg.Mode == NewMode)
-                {
-                    Logger.Warning($"Polygroup [{GroupIndex}] was not changed as it already has {NewMode} mode.");
-                    continue;
-                }
-                pg.Mode = NewMode;
-                Logger.Info($"Polygroup mode of group [{GroupIndex}] - {pg.Name} has been set to {NewMode}.");
-            }
-        }
-
         [Command(CommandName = "car.groups.movepoly", VerifyCarLoaded = true)]
         [Description("""
             Moves polygons from one poly group to another.

@@ -91,5 +91,28 @@ namespace NFMRadTools.Editing
         {
 
         }*/
+
+        public Polygon Duplicate()
+        {
+            Polygon copy = new Polygon();
+            copy.Vertices.AddRange(Vertices);
+            copy.Metadata.AddRange(Metadata);
+            copy.AlternativePolyMarkup = AlternativePolyMarkup;
+            copy.NoOutline = NoOutline;
+            copy.Glass = Glass;
+            copy.GlassTint = GlassTint;
+            copy.Light = Light;
+            copy.LightFront = LightFront;
+            copy.LightBack = LightBack;
+            copy.LightBrake = LightBrake;
+            copy.LightReverse = LightReverse;
+            copy.DayOnly = DayOnly;
+            copy.NightOnly = NightOnly;
+            copy.Color = Color;
+            copy.Fs = Fs;
+            copy.Gr = Gr;
+            copy.PolyGroup = PolyGroup;
+            return copy;
+        }
     }
 }

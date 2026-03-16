@@ -131,5 +131,21 @@ namespace NFMRadTools.Editing
 
             return sb.ToString();
         }
+
+        public PolyGroup Duplicate()
+        {
+            PolyGroup copy = new PolyGroup();
+            copy._polygons.EnsureCapacity(_polygons.Count);
+            copy._mode = _mode;
+            copy.Name = Name;
+            copy.CustomWheelIndex = CustomWheelIndex;
+            foreach(Polygon poly in _polygons)
+            {
+                Polygon dupPoly = poly.Duplicate();
+                dupPoly.PolyGroup = copy;
+                copy._polygons.Add(dupPoly);
+            }
+            return copy;
+        }
     }
 }

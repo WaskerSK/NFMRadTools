@@ -70,5 +70,43 @@ namespace NFMRadTools.Editing
             }
             return w;
         }
+
+        public static Cylinder GetFromPolyGroups(IEnumerable<PolyGroup> polyGroups)
+        {
+            if (polyGroups is null) return new Cylinder();
+            if(!polyGroups.Any()) return new Cylinder();
+            int minX = int.MaxValue;
+            int maxX = int.MinValue;
+            int minY = int.MaxValue;
+            int maxY = int.MinValue;
+            int minZ = int.MaxValue;
+            int maxZ = int.MinValue;
+
+            foreach(PolyGroup g in polyGroups)
+            {
+                foreach(Polygon p in g.Polygons)
+                {
+                    foreach(Vertex v in p.Vertices)
+                    {
+                        minX = int.Min(v.X, minX);
+                        maxX = int.Max(v.X, maxX);
+                        minY = int.Min(v.Y, minY);
+                        maxY = int.Max(v.Y, maxY);
+                        minZ = int.Min(v.Z, minZ);
+                        maxZ = int.Max(v.Z, maxZ);
+                    }
+                }
+            }
+
+            Vector3D minV = new Vector3D(minX, minY, minZ);
+            Vector3D maxV = new Vector3D(maxX, maxY, maxZ);
+            Vector3D location = Vector3D.Mid(minV, maxV);
+            Vector3D fminV = minV * Vector3D.VectorYZ;
+            Vector3D fmaxV = maxV * Vector3D.VectorYZ;
+            Vector3D fLoc = location * Vector3D.VectorYZ;
+            double radius = double.Max(Vector3D.Max(Vector3D.Abs(Vector3D.Distance(fLoc, fminV))), Vector3D.Max(Vector3D.Abs(Vector3D.Distance(fLoc, fmaxV))));
+            double width = double.Abs(maxV.X - minV.X);
+            return new Cylinder(location, radius, width);
+        }
     }
 }
