@@ -116,6 +116,7 @@ namespace NFMRadTools.Utilities.Importing
                                 v = v - cylinder.Location;
                                 if (invertX)
                                     v = v * new Vector3D(-1.0, 1.0, 1.0);
+                                v += new Vector3D(cylinder.Width / 2, 0, 0);
                                 //+ new Vector3D(cylinder.NFMCorrectedWidth / 4, 0, 0);
                                 break;
                             case IntermediateMeshMode.G6Wheel:
