@@ -112,10 +112,11 @@ namespace NFMRadTools.Utilities.Importing
                         {
                             case IntermediateMeshMode.Normal: break;
                             case IntermediateMeshMode.DragShotWheel:
-                                bool invertX = cylinder.Location.X >= 0;
-                                v = v - cylinder.Location + new Vector3D(cylinder.NFMCorrectedWidth/4,0, 0);
-                                if(invertX)
+                                bool invertX = cylinder.Location.X < 0;
+                                v = v - cylinder.Location;
+                                if (invertX)
                                     v = v * new Vector3D(-1.0, 1.0, 1.0);
+                                //+ new Vector3D(cylinder.NFMCorrectedWidth / 4, 0, 0);
                                 break;
                             case IntermediateMeshMode.G6Wheel:
                             case IntermediateMeshMode.PhyrexianWheel:

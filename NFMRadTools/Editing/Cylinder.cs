@@ -27,14 +27,15 @@ namespace NFMRadTools.Editing
             //Origin = origin;
             Radius = radius;
             Width = width;
-            NFMDsCorrectedWheelRadius = Radius * (50.0 / 60.0);
-            double adjustScale = 1.0;
+            NFMDsCorrectedWheelRadius = Radius * (34.0 / 42.0);
+            /*double adjustScale = 1.0;
             if(NFMDsCorrectedWheelRadius > 46.0)
             {
                 adjustScale = 46.0 / NFMDsCorrectedWheelRadius;
                 NFMDsCorrectedWheelRadius = NFMDsCorrectedWheelRadius * adjustScale;
             }
-            NFMDsCorrectedRadius = Radius * adjustScale;
+            NFMDsCorrectedRadius = Radius * adjustScale;*/
+            NFMDsCorrectedRadius = Radius;
             NFMCorrectedWidth = (Width * 1.25) * (Location.X >= 0 ? -1 : 1);
             NFMVanillaCorrectedWheelRadius = Radius * (35.0 / 42.0); /// 2.0 * (35.0 / 30.0);
         }
@@ -58,6 +59,8 @@ namespace NFMRadTools.Editing
                 case IntermediateMeshMode.DragShotWheel:
                     w.Height = (int)NFMDsCorrectedWheelRadius;
                     w.RimSize = (int)(NFMDsCorrectedWheelRadius * 0.7);
+                    w.Width = (int)Width * (Location.X < 0 ? -1 : 1);
+                    w.X = w.X + (w.Width / 2);
                     break;
                 case IntermediateMeshMode.G6Wheel:
                     w.Width = (int)Width;
