@@ -14,9 +14,6 @@ namespace NFMRadTools.Editing
         public double Radius { get; }
         public double Width { get; }
         
-        public double NFMDsCorrectedRadius { get; }
-        public double NFMDsCorrectedWheelRadius { get; }
-        
         public double NFMVanillaCorrectedWheelRadius { get; }
 
         public double NFMCorrectedWidth { get; }
@@ -27,17 +24,8 @@ namespace NFMRadTools.Editing
             //Origin = origin;
             Radius = radius;
             Width = width;
-            NFMDsCorrectedWheelRadius = Radius * (34.0 / 42.0);
-            /*double adjustScale = 1.0;
-            if(NFMDsCorrectedWheelRadius > 46.0)
-            {
-                adjustScale = 46.0 / NFMDsCorrectedWheelRadius;
-                NFMDsCorrectedWheelRadius = NFMDsCorrectedWheelRadius * adjustScale;
-            }
-            NFMDsCorrectedRadius = Radius * adjustScale;*/
-            NFMDsCorrectedRadius = Radius;
             NFMCorrectedWidth = (Width * 1.25) * (Location.X >= 0 ? -1 : 1);
-            NFMVanillaCorrectedWheelRadius = Radius * (35.0 / 42.0); /// 2.0 * (35.0 / 30.0);
+            NFMVanillaCorrectedWheelRadius = Radius * (34.0 / 42.0);
         }
 
         public Wheel ConvertToNFMWheel(IntermediateMeshMode mode)
@@ -57,10 +45,8 @@ namespace NFMRadTools.Editing
             {
                 case IntermediateMeshMode.Normal: break;
                 case IntermediateMeshMode.DragShotWheel:
-                    w.Height = (int)NFMDsCorrectedWheelRadius;
-                    w.RimSize = (int)(NFMDsCorrectedWheelRadius * 0.7);
                     w.Width = (int)Width * (Location.X < 0 ? -1 : 1);
-                    break;
+                    goto case IntermediateMeshMode.VanillaWheel;
                 case IntermediateMeshMode.G6Wheel:
                     w.Width = (int)Width;
                     goto case IntermediateMeshMode.VanillaWheel;
