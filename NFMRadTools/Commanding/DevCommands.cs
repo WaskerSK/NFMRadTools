@@ -97,7 +97,7 @@ namespace NFMRadTools.Commanding
                 {
                     if(!baseVerts.Any(x => x == v)) difference++;
                 }
-                Console.WriteLine($"{mesh.Name} has {difference} different vertices compared to base {baseMesh.Name}, FuncCompareResult: {mesh.IsMeshIdenticalTo(baseMesh, 0.5)}");
+                Console.WriteLine($"{mesh.Name} has {difference} different vertices compared to base {baseMesh.Name}, FuncCompareResult: {mesh.IsMeshIdenticalTo(baseMesh, 0.5, true)}");
             }
         }
     }

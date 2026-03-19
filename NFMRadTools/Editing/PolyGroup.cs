@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NFMRadTools.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -146,6 +147,18 @@ namespace NFMRadTools.Editing
                 copy._polygons.Add(dupPoly);
             }
             return copy;
+        }
+
+        public PolyGroup Mirror(Axis MirrorAxis, bool CreateCopy)
+        {
+            PolyGroup g = null;
+            if (CreateCopy) g = this.Duplicate();
+            else g = this;
+            foreach(Polygon p in g._polygons)
+            {
+                p.Mirror(MirrorAxis, false);
+            }
+            return g;
         }
     }
 }

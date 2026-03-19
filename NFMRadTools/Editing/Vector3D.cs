@@ -88,10 +88,21 @@ namespace NFMRadTools.Editing
         public static Vector3D Subtract(Vector3D A, Vector3D B) => A - B;
         public static Vector3D Multiply(Vector3D A, Vector3D B) => A * B;
         public static Vector3D Divide(Vector3D A, Vector3D B) => A / B;
-
+        public static Vector3D Normalize(Vector3D Value)
+        {
+            double max = Max(Abs(Value));
+            if (max == 0)
+            {
+                double normalizedZero = 1.0 / 3.0;
+                return new Vector3D(normalizedZero);
+            }
+            return Value / new Vector3D(max);
+        }
         public static Vector3D Abs(Vector3D Value) => new Vector3D(double.Abs(Value.X), double.Abs(Value.Y), double.Abs(Value.Z));
         public static Vector3D Negate(Vector3D Value) => Value * new Vector3D(-1.0);
         public static Vector3D Distance(Vector3D A, Vector3D B) => Abs(A - B);
+        public static Vector3D MinComponents(Vector3D A, Vector3D B) => new Vector3D(double.Min(A.X, B.X), double.Min(A.Y, B.Y), double.Min(A.Z, B.Z));
+        public static Vector3D MaxComponents(Vector3D A, Vector3D B) => new Vector3D(double.Max(A.X, B.X), double.Max(A.Y, B.Y), double.Max(A.Z, B.Z));
         public static double Sum(Vector3D Value) => Value.X + Value.Y + Value.Z;
         public static double Max(Vector3D Value) => double.Max(Value.X, double.Max(Value.Y, Value.Z));
         public static double Min(Vector3D Value) => double.Min(Value.X, double.Min(Value.Y, Value.Z));

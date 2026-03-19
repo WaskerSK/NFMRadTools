@@ -48,8 +48,12 @@ namespace NFMRadTools.Editing
                     w.Width = (int)Width * (Location.X < 0 ? -1 : 1);
                     goto case IntermediateMeshMode.VanillaWheel;
                 case IntermediateMeshMode.G6Wheel:
-                    w.Width = (int)Width;
-                    goto case IntermediateMeshMode.VanillaWheel;
+                    //w.Width = (int)Width;
+                    w.Width = 20;
+                    w.Height = 20;
+                    w.RimSize = 16;
+                    //goto case IntermediateMeshMode.VanillaWheel;
+                    break;
                 case IntermediateMeshMode.PhyrexianWheel:
                 case IntermediateMeshMode.VanillaWheel:
                     w.Height = (int)NFMVanillaCorrectedWheelRadius;
@@ -92,7 +96,7 @@ namespace NFMRadTools.Editing
             Vector3D fminV = minV * Vector3D.VectorYZ;
             Vector3D fmaxV = maxV * Vector3D.VectorYZ;
             Vector3D fLoc = location * Vector3D.VectorYZ;
-            double radius = double.Max(Vector3D.Max(Vector3D.Abs(Vector3D.Distance(fLoc, fminV))), Vector3D.Max(Vector3D.Abs(Vector3D.Distance(fLoc, fmaxV))));
+            double radius = double.Max(Vector3D.Max(Vector3D.Distance(fLoc, fminV)), Vector3D.Max(Vector3D.Distance(fLoc, fmaxV)));
             double width = double.Abs(maxV.X - minV.X);
             return new Cylinder(location, radius, width);
         }

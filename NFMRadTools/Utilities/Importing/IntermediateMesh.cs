@@ -35,17 +35,81 @@ namespace NFMRadTools.Utilities.Importing
             return MeshInfo.Cylinder;
         }
 
-        public bool IsMeshIdenticalTo(IntermediateMesh other, double errorTolerance)
+        public bool IsMeshIdenticalTo(IntermediateMesh other, double errorTolerance, bool ignoreScale)
         {
             if(other is null) return false;
             if(other.Vertices.Count != this.Vertices.Count) return false;
             if(other.Faces.Count != this.Faces.Count) return false;
+            if (this.Vertices.Count == 0) return true;
             List<Vertex> A_orderedVerts = MeshInfo.OrderedLocationOffsetVertices;
             List<Vertex> B_orderedVerts = other.MeshInfo.OrderedLocationOffsetVertices;
-            for(int i = 0; i < this.Vertices.Count; i++)
+            errorTolerance = double.Abs(errorTolerance);
+            if(!ignoreScale)
             {
-                if (A_orderedVerts[i] != B_orderedVerts[i])
-                    return false;
+                if(errorTolerance < 1)
+                {
+                    for (int i = 0; i < this.Vertices.Count; i++)
+                    {
+                        if (A_orderedVerts[i] != B_orderedVerts[i])
+                            return false;
+                    }
+                }
+                else
+                {
+                    for(int i = 0; i < this.Vertices.Count; i++)
+                    {
+                        if (Vector3D.Length(Vector3D.Distance((Vector3D)A_orderedVerts[i], (Vector3D)B_orderedVerts[i])) > errorTolerance)
+                            return false;
+                    }
+                }
+            }
+            else
+            {
+                int minX = int.MaxValue;
+                int maxX = int.MinValue;
+                int minY = int.MaxValue;
+                int maxY = int.MinValue;
+                int minZ = int.MaxValue;
+                int maxZ = int.MinValue;
+                foreach(Vertex v in A_orderedVerts)
+                {
+                    if(v.X < minX) minX = v.X;
+                    else if(v.X > maxX) maxX = v.X;
+                    if(v.Y < minY) minY = v.Y;
+                    else if(v.Y > maxY) maxY = v.Y;
+                    if(v.Z < minZ) minZ = v.Z;
+                    else if(v.Z > maxZ) maxZ = v.Z;
+                }
+                Vector3D A_Min = new Vector3D(minX, minY, minZ);
+                Vector3D A_Max = new Vector3D(maxX, maxY, maxZ);
+                minX = int.MaxValue;
+                maxX = int.MinValue;
+                minY = int.MaxValue;
+                maxY = int.MinValue;
+                minZ = int.MaxValue;
+                maxZ = int.MinValue;
+                foreach (Vertex v in B_orderedVerts)
+                {
+                    if (v.X < minX) minX = v.X;
+                    else if (v.X > maxX) maxX = v.X;
+                    if (v.Y < minY) minY = v.Y;
+                    else if (v.Y > maxY) maxY = v.Y;
+                    if (v.Z < minZ) minZ = v.Z;
+                    else if (v.Z > maxZ) maxZ = v.Z;
+                }
+                Vector3D B_Min = new Vector3D(minX, minY, minZ);
+                Vector3D B_Max = new Vector3D(maxX, maxY, maxZ);
+                Vector3D A_Absolute = Vector3D.MaxComponents(Vector3D.Abs(A_Min), Vector3D.Abs(A_Max));
+                Vector3D B_Absolute = Vector3D.MaxComponents(Vector3D.Abs(B_Min), Vector3D.Abs(B_Max));
+                Vector3D B_ScaleMult = A_Absolute / B_Absolute;
+                for(int i = 0; i < this.Vertices.Count; i++)
+                {
+                    Vector3D A = (Vector3D)A_orderedVerts[i];
+                    Vector3D B = (Vector3D)B_orderedVerts[i];
+                    double dist = Vector3D.Length(Vector3D.Distance(A, B * B_ScaleMult));
+                    if (dist > errorTolerance)
+                        return false;
+                }
             }
             return true;
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NFMRadTools.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -113,6 +114,32 @@ namespace NFMRadTools.Editing
             copy.Gr = Gr;
             copy.PolyGroup = PolyGroup;
             return copy;
+        }
+
+        public Polygon Mirror(Axis MirrorAxis, bool CreateCopy)
+        {
+            Polygon p = null;
+            if (CreateCopy) p = this.Duplicate();
+            else p = this;
+            MirrorAxis = MirrorAxis.ToPositive();
+            Vector3D v = default;
+            switch(MirrorAxis)
+            {
+                case Axis.X:
+                    v = new Vector3D(-1,1,1);
+                    break;
+                case Axis.Y:
+                    v = new Vector3D(1, -1, 1);
+                    break;
+                case Axis.Z:
+                    v = new Vector3D(1, 1, -1);
+                    break;
+            }
+            for(int i = 0; i < p.Vertices.Count; i++)
+            {
+                p.Vertices[i] = (Vertex)((Vector3D)p.Vertices[i] * v);
+            }
+            return p;
         }
     }
 }
