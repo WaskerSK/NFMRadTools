@@ -43,7 +43,7 @@ namespace NFMRadTools.Utilities.Importing
                         }
                         hasSeenDragShotWheel = true;
                         Wheel dsWheelVanillaDef = GetWheel(cylinder, mesh);
-                        other.DragShotWheelDefinition.Radius = (int)cylinder.Radius;
+                        other.DragShotWheelDefinition.Radius = cylinder.Radius.RoundToInt();
                         other.DragShotWheelDefinition.Depth = int.Abs(dsWheelVanillaDef.Width);
                         other.Wheels.Add(dsWheelVanillaDef);
                         break;
@@ -61,9 +61,9 @@ namespace NFMRadTools.Utilities.Importing
                                 {
                                     IntermediateMesh original = Meshes.First(x => x.Mode == mesh.Mode && x.G6WheelIndex == mesh.G6WheelIndex);
                                     double ratio = mesh.GetBoundingCylinder().Radius / original.GetBoundingCylinder().Radius;
-                                    g6Wheel.Height = (int)(20.0 * ratio);
+                                    g6Wheel.Height = (20.0 * ratio).RoundToInt();
                                     ratio = mesh.GetBoundingCylinder().Width / original.GetBoundingCylinder().Width;
-                                    g6Wheel.Width = (int)(20.0 * ratio);
+                                    g6Wheel.Width = (20.0 * ratio).RoundToInt();
                                     continue;
                                 }
                                 break;
@@ -89,9 +89,9 @@ namespace NFMRadTools.Utilities.Importing
                                         mesh.G6WheelIndex = prevG6Mesh.G6WheelIndex;
                                         IntermediateMesh original = Meshes.First(x => x.Mode == mesh.Mode && x.G6WheelIndex == mesh.G6WheelIndex);
                                         double ratio = mesh.GetBoundingCylinder().Radius / original.GetBoundingCylinder().Radius;
-                                        g6Wheel.Height = (int)(20.0 * ratio);
+                                        g6Wheel.Height = (20.0 * ratio).RoundToInt();
                                         ratio = mesh.GetBoundingCylinder().Width / original.GetBoundingCylinder().Width;
-                                        g6Wheel.Width = (int)(20.0 * ratio);
+                                        g6Wheel.Width = (20.0 * ratio).RoundToInt();
                                         found = true;
                                         break;
                                     }
@@ -136,9 +136,7 @@ namespace NFMRadTools.Utilities.Importing
                                 break;
                             case IntermediateMeshMode.VanillaWheel: break;
                         }
-                        vertex.X = (int)v.X;
-                        vertex.Y = (int)v.Y;
-                        vertex.Z = (int)v.Z;
+                        vertex = (Vertex)v;
                         p.Vertices.Add(vertex);
                     }
                     bool mergeVerts = false;

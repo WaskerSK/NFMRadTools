@@ -154,6 +154,16 @@ namespace System
         }
         #endregion
 
+        #region double
+        public static int RoundToInt(this double value)
+        {
+            return (int)double.Round(value, MidpointRounding.AwayFromZero);
+        }
+        public static long RoundToLong(this double value)
+        {
+            return (long)double.Round(value, MidpointRounding.AwayFromZero);
+        }
+        #endregion
 
     }
 }

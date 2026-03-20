@@ -9,6 +9,7 @@ namespace NFMRadTools.Editing
 {
     public readonly struct Cylinder
     {
+        public const double NFMWheelRadiusGoldenRatio = 34.0 / 42.0;
         public Vector3D Location { get; }
         //public Vector3D Origin { get; }
         public double Radius { get; }
@@ -25,27 +26,28 @@ namespace NFMRadTools.Editing
             Radius = radius;
             Width = width;
             NFMCorrectedWidth = (Width * 1.25) * (Location.X >= 0 ? -1 : 1);
-            NFMVanillaCorrectedWheelRadius = Radius * (34.0 / 42.0);
+            NFMVanillaCorrectedWheelRadius = Radius * NFMWheelRadiusGoldenRatio;
+
         }
 
         public Wheel ConvertToNFMWheel(IntermediateMeshMode mode)
         {
             if (mode == IntermediateMeshMode.Normal) throw new InvalidOperationException();
             Wheel w = new Wheel();
-            w.X = (int)Location.X;
-            w.Y = (int)Location.Y;
-            w.Z = (int)Location.Z;
+            w.X = Location.X.RoundToInt();
+            w.Y = Location.Y.RoundToInt();
+            w.Z = Location.Z.RoundToInt();
             w.CanSteer = Location.Z >= 0;
             w.GwGr = 0;
             //w.Height = (int)NFMDsCorrectedWheelRadius;
-            w.Width = (int)NFMCorrectedWidth;
+            w.Width = NFMCorrectedWidth.RoundToInt();
             w.RimDepth = 0;
             //w.RimSize = (int)(NFMDsCorrectedWheelRadius * 0.7);
             switch(mode)
             {
                 case IntermediateMeshMode.Normal: break;
                 case IntermediateMeshMode.DragShotWheel:
-                    w.Width = (int)Width * (Location.X < 0 ? -1 : 1);
+                    w.Width = Width.RoundToInt() * (Location.X < 0 ? -1 : 1);
                     goto case IntermediateMeshMode.VanillaWheel;
                 case IntermediateMeshMode.G6Wheel:
                     //w.Width = (int)Width;
@@ -55,9 +57,11 @@ namespace NFMRadTools.Editing
                     //goto case IntermediateMeshMode.VanillaWheel;
                     break;
                 case IntermediateMeshMode.PhyrexianWheel:
+                    w.Width = Width.RoundToInt();
+                    goto case IntermediateMeshMode.VanillaWheel;
                 case IntermediateMeshMode.VanillaWheel:
-                    w.Height = (int)NFMVanillaCorrectedWheelRadius;
-                    w.RimSize = (int)(NFMVanillaCorrectedWheelRadius * 0.7);
+                    w.Height = NFMVanillaCorrectedWheelRadius.RoundToInt();
+                    w.RimSize = (NFMVanillaCorrectedWheelRadius * 0.7).RoundToInt();
                     break;
             }
             return w;

@@ -265,6 +265,160 @@ namespace NFMRadTools.Commanding
             Logger.Info($"New group created: [{Program.CurrentCar.PolyGroups.Count - 1}] - {g.Name} - Mode: {Mode}");
         }
 
+        [Command(CommandName = "car.groups.cwconvert", VerifyCarLoaded = true)]
+        [Description("""
+            Changes current custom wheels to a different type of custom wheels.
+            =Inputs=
+            PolyGroupMode NewMode - The new custom wheel mode.
+            """)]
+        public static void ChangeCustomWheelMode(PolyGroupMode NewMode)
+        {
+            if(NewMode > PolyGroupMode.G6Wheel)
+            {
+                Logger.Error("Invalid mode value.");
+                return;
+            }
+            if(NewMode == PolyGroupMode.Normal)
+            {
+                Logger.Error("Normal mode is not valid for custom wheels.");
+                return;
+            }
+            NFMCar car = Program.CurrentCar;
+            if(!car.PolyGroups.Any(x => x.Mode != PolyGroupMode.Normal))
+            {
+                Logger.Warning("No custom wheel groups found. No changes were made.");
+                return;
+            }
+            PolyGroupMode oldMode = car.PolyGroups.First(x => x.Mode != PolyGroupMode.Normal).Mode;
+            if(car.PolyGroups.Where(x => x.Mode != PolyGroupMode.Normal).Any(x => x.Mode != oldMode))
+            {
+                Logger.Error("Changing between multiple wheel modes is not supported.");
+                return;
+            }
+            List<PolyGroup> groups = new List<PolyGroup>(car.PolyGroups.Where(x => x.Mode != PolyGroupMode.Normal));
+            Debug.Assert(groups.Count > 0);
+            foreach(PolyGroup g in groups)
+            {
+                car.PolyGroups.Remove(g);
+            }
+            switch(oldMode)
+            {
+                case PolyGroupMode.DragShotWheel:
+                    {
+                        double offset = car.DragShotWheelDefinition.Depth;
+                        offset /= 2.0;
+                        foreach(PolyGroup g in groups)
+                        {
+                            foreach(Polygon p in g.Polygons)
+                            {
+                                for(int i = 0; i < p.Vertices.Count; i++)
+                                {
+                                    p.Vertices[i] = (Vertex)((Vector3D)p.Vertices[i] - new Vector3D(offset, 0.0, 0.0));
+                                }
+                            }
+                        }
+                        switch(NewMode)
+                        {
+                            case PolyGroupMode.PhyrexianWheel:
+                                {
+                                    foreach(PolyGroup g in groups)
+                                    {
+                                        g.Mode = PolyGroupMode.PhyrexianWheel;
+                                        g.CustomWheelIndex = 0;
+                                    }
+                                    IEnumerable<PolyGroup> groupsToDuplicate = groups.Take(groups.Count);
+                                    int i = 1;
+                                    foreach(Wheel w in car.Wheels.Skip(1))
+                                    {
+                                        foreach(PolyGroup g in groupsToDuplicate)
+                                        {
+                                            PolyGroup clone = g.Duplicate();
+                                            clone.CustomWheelIndex = i;
+                                            if(w.X < 0)
+                                                clone.Mirror(Axis.X, false);
+                                            groups.Add(clone);
+                                        }
+                                        i++;
+                                    }
+                                    if (car.Wheels[0].X < 0)
+                                    {
+                                        foreach (PolyGroup g in groupsToDuplicate)
+                                        {
+                                            g.Mirror(Axis.X, false);
+                                        }
+                                    }
+                                    break;
+                                }
+                            case PolyGroupMode.G6Wheel:
+                                {
+                                    foreach (PolyGroup g in groups)
+                                    {
+                                        g.Mode = PolyGroupMode.G6Wheel;
+                                        g.CustomWheelIndex = 0;
+                                        g.Mirror(Axis.X, false);
+                                    }
+                                    Cylinder c = Cylinder.GetFromPolyGroups(groups);
+                                    double width = double.Truncate(c.Width);
+                                    double radius = double.Truncate(c.NFMVanillaCorrectedWheelRadius);
+
+                                    foreach(Wheel w in car.Wheels)
+                                    {
+                                        double wWidth = int.Abs(w.Width);
+                                        double wRadius = int.Abs(w.Height);
+                                        double ratio = wWidth / width;
+                                        w.Width = (20.0 * ratio).RoundToInt();
+                                        ratio = wRadius / radius;
+                                        w.Height = (20.0 * ratio).RoundToInt();
+                                        w.WheelModel = 0;
+                                    }
+                                    break;
+                                }
+                        }
+                        break;
+                    }
+                case PolyGroupMode.PhyrexianWheel:
+                    {
+                        switch(NewMode)
+                        {
+                            case PolyGroupMode.DragShotWheel:
+                                {
+                                    groups.RemoveAll(x => x.CustomWheelIndex != 0);
+                                    Cylinder c = Cylinder.GetFromPolyGroups(groups);
+                                    car.DragShotWheelDefinition.Depth = int.Abs(c.Width.RoundToInt());
+                                    car.DragShotWheelDefinition.Radius = c.Radius.RoundToInt();
+                                    double offset = car.DragShotWheelDefinition.Depth;
+                                    offset /= 2.0;
+                                    bool mirror = car.Wheels[0].X < 0;
+                                    foreach (PolyGroup g in groups)
+                                    {
+                                        g.Mode = PolyGroupMode.DragShotWheel;
+                                        if(mirror) g.Mirror(Axis.X, false);
+
+                                        foreach (Polygon p in g.Polygons)
+                                        {
+                                            for (int i = 0; i < p.Vertices.Count; i++)
+                                            {
+                                                Vector3D v = (Vector3D)p.Vertices[i];
+                                                p.Vertices[i] = (Vertex)(v + new Vector3D(offset, 0.0, 0.0));
+                                            }
+                                        }
+                                    }
+                                    foreach(Wheel w in car.Wheels)
+                                    {
+                                        if (w.X < 0) w.Width *= -1;
+                                    }
+                                    break;
+                                }
+                            case PolyGroupMode.G6Wheel: throw new NotImplementedException();
+                        }
+                        break;
+                    }
+                case PolyGroupMode.G6Wheel: throw new NotImplementedException();
+            }
+            car.PolyGroups.AddRange(groups);
+            Logger.Info($"Custom wheels were changed from {oldMode} to {NewMode}.");
+        }
+
         [Command(CommandName = "car.groups.movepoly", VerifyCarLoaded = true)]
         [Description("""
             Moves polygons from one poly group to another.

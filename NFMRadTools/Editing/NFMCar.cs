@@ -7,6 +7,7 @@ using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -863,9 +864,10 @@ namespace NFMRadTools.Editing
                 var sideGroups = wheelGroup.GroupBy(x => x.X >= 0);
                 IGrouping<bool, Wheel> leftWheels = sideGroups.FirstOrDefault(x => x.Key == false);
                 IGrouping<bool, Wheel> rightWheels = sideGroups.FirstOrDefault(x => x.Key == true);
-                if (leftWheels.Count() != rightWheels.Count()) throw new InvalidDataException("Wheel counts on left and right side do not match.");
-                
-                foreach(Wheel wheel in leftWheels.OrderByDescending(x => x.Z).Interlace(rightWheels.OrderByDescending(x => x.Z)))
+                if (leftWheels is null) leftWheels = EmptyGrouping<bool, Wheel>.Empty;
+                if (rightWheels is null) rightWheels = EmptyGrouping<bool, Wheel>.Empty;
+                //if (leftWheels.Count() != rightWheels.Count()) throw new InvalidDataException("Wheel counts on left and right side do not match.");
+                foreach (Wheel wheel in leftWheels.OrderByDescending(x => x.Z).Interlace(rightWheels.OrderByDescending(x => x.Z)))
                 {
                     sb.Append("w(")
                         .Append(wheel.X)
