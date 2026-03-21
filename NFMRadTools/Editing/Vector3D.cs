@@ -107,7 +107,13 @@ namespace NFMRadTools.Editing
         public static double Max(Vector3D Value) => double.Max(Value.X, double.Max(Value.Y, Value.Z));
         public static double Min(Vector3D Value) => double.Min(Value.X, double.Min(Value.Y, Value.Z));
         public static double Length(Vector3D Value) => double.Sqrt(Sum(Value * Value));
-        public static Vector3D Mid(Vector3D A, Vector3D B) => A + Distance(A, B) / new Vector3D(2.0);
+        public static Vector3D Mid(Vector3D A, Vector3D B)
+        {
+            Vector3D minComps = Vector3D.MinComponents(A, B);
+            Vector3D maxComps = Vector3D.MaxComponents(A, B);
+            return minComps + (maxComps - minComps) / new Vector3D(2.0);
+            //A + (A - B) / new Vector3D(2.0);
+        }
         public static Vector3D Cross(Vector3D A, Vector3D B) => new Vector3D(A.Y * B.Z - A.Z * B.Y, A.Z * B.X - A.X * B.Z, A.X * B.Y - A.Y * B.X);
         public static Vector3D Swizzle(Vector3D Value, Axis XAxis = Axis.X, Axis YAxis = Axis.Y, Axis ZAxis = Axis.Z)
         {
