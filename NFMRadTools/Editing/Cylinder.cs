@@ -50,12 +50,8 @@ namespace NFMRadTools.Editing
                     w.Width = Width.RoundToInt() * (Location.X < 0 ? -1 : 1);
                     goto case IntermediateMeshMode.VanillaWheel;
                 case IntermediateMeshMode.G6Wheel:
-                    //w.Width = (int)Width;
-                    w.Width = 20;
-                    w.Height = 20;
-                    w.RimSize = 16;
-                    //goto case IntermediateMeshMode.VanillaWheel;
-                    break;
+                    w.Width = (int)Width;
+                    goto case IntermediateMeshMode.VanillaWheel;
                 case IntermediateMeshMode.PhyrexianWheel:
                     w.Width = Width.RoundToInt();
                     goto case IntermediateMeshMode.VanillaWheel;

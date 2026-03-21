@@ -357,20 +357,6 @@ namespace NFMRadTools.Commanding
                                         g.CustomWheelIndex = 0;
                                         g.Mirror(Axis.X, false);
                                     }
-                                    Cylinder c = Cylinder.GetFromPolyGroups(groups);
-                                    double width = double.Truncate(c.Width);
-                                    double radius = double.Truncate(c.NFMVanillaCorrectedWheelRadius);
-
-                                    foreach(Wheel w in car.Wheels)
-                                    {
-                                        double wWidth = int.Abs(w.Width);
-                                        double wRadius = int.Abs(w.Height);
-                                        double ratio = wWidth / width;
-                                        w.Width = (20.0 * ratio).RoundToInt();
-                                        ratio = wRadius / radius;
-                                        w.Height = (20.0 * ratio).RoundToInt();
-                                        w.WheelModel = 0;
-                                    }
                                     break;
                                 }
                         }
@@ -409,7 +395,69 @@ namespace NFMRadTools.Commanding
                                     }
                                     break;
                                 }
-                            case PolyGroupMode.G6Wheel: throw new NotImplementedException();
+                            case PolyGroupMode.G6Wheel:
+                                {
+                                    IEnumerable<IGrouping<int, PolyGroup>> wheelGroups = groups.GroupBy(x => x.CustomWheelIndex);
+                                    List<IGrouping<int, PolyGroup>> uniqueModels = new List<IGrouping<int, PolyGroup>>();
+                                    Dictionary<int, List<int>> wheelMap = new Dictionary<int, List<int>>();
+                                    foreach(IGrouping<int, PolyGroup> wheelModel in wheelGroups)
+                                    {
+                                        IGrouping<int, PolyGroup> match = uniqueModels.FirstOrDefault(x =>
+                                        {
+                                            if (x.Sum(g => g.Polygons.Sum(p => p.Vertices.Count)) != wheelModel.Sum(g => g.Polygons.Sum(p => p.Vertices.Count)))
+                                                return false;
+                                            Cylinder cA = Cylinder.GetFromPolyGroups(wheelModel);
+                                            Cylinder cB = Cylinder.GetFromPolyGroups(x);
+                                            IOrderedEnumerable<Vertex> Unique = x.SelectMany(g => g.Polygons).SelectMany(p => p.Vertices).Order(VertexComparer.Default);
+                                            IEnumerable<Vertex> newVert = wheelModel.SelectMany(g => g.Polygons).SelectMany(p => p.Vertices);
+                                            if (int.Sign(car.Wheels[x.Key].X) != int.Sign(car.Wheels[wheelModel.Key].X))
+                                                newVert = newVert.Convert(x => (Vertex)((Vector3D)x * new Vector3D(-1.0, 1.0, 1.0)));
+                                            IOrderedEnumerable<Vertex> New = newVert.Order(VertexComparer.Default);
+                                            Wheel aWheel = car.Wheels[x.Key];
+                                            Wheel bWheel = car.Wheels[wheelModel.Key];
+                                            return Unique.SequenceEqual(New, (a, b) =>
+                                            {
+                                                int Aradius = cA.Radius.RoundToInt();
+                                                int Awidth = cA.Width.RoundToInt();
+                                                int Bradius = cB.Radius.RoundToInt();
+                                                int Bwidth = cB.Width.RoundToInt();
+                                                double RadiusRatio = (double)Aradius / Bradius;
+                                                double WidthRatio = (double)Awidth / Bwidth;
+                                                return a == (Vertex)((Vector3D)b * new Vector3D(WidthRatio, RadiusRatio, RadiusRatio));
+                                            });
+                                        });
+                                        if (match is null)
+                                        {
+                                            uniqueModels.Add(wheelModel);
+                                            wheelMap.Add(wheelModel.Key, new List<int>() { wheelModel.Key});
+                                            continue;
+                                        }
+                                        wheelMap[match.Key].Add(wheelModel.Key);
+                                    }
+                                    groups.Clear();
+                                    for(int i = 0; i < uniqueModels.Count; i++)
+                                    {
+                                        foreach(PolyGroup g in uniqueModels[i])
+                                        {
+                                            g.Mode = PolyGroupMode.G6Wheel;
+                                            g.CustomWheelIndex = i;
+                                            foreach(int wheelIndex in wheelMap[uniqueModels[i].Key])
+                                            {
+                                                car.Wheels[wheelIndex].WheelModel = i;
+                                            }
+                                        }
+                                    }
+                                    foreach (IGrouping<int, PolyGroup> grouping in uniqueModels)
+                                    {
+                                        if (car.Wheels[grouping.Key].X > 0)
+                                        {
+                                            foreach (PolyGroup g in grouping)
+                                                g.Mirror(Axis.X, false);
+                                        }
+                                        groups.AddRange(grouping);
+                                    }
+                                    break;
+                                }
                         }
                         break;
                     }

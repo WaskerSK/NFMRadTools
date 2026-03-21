@@ -58,14 +58,7 @@ namespace NFMRadTools.Utilities.Importing
                             if(mesh.G6WheelIndex.HasValue)
                             {
                                 if(other.PolyGroups.Any(x => x.Mode == PolyGroupMode.G6Wheel && x.CustomWheelIndex == mesh.G6WheelIndex))
-                                {
-                                    IntermediateMesh original = Meshes.First(x => x.Mode == mesh.Mode && x.G6WheelIndex == mesh.G6WheelIndex);
-                                    double ratio = mesh.GetBoundingCylinder().Radius / original.GetBoundingCylinder().Radius;
-                                    g6Wheel.Height = (20.0 * ratio).RoundToInt();
-                                    ratio = mesh.GetBoundingCylinder().Width / original.GetBoundingCylinder().Width;
-                                    g6Wheel.Width = (20.0 * ratio).RoundToInt();
                                     continue;
-                                }
                                 break;
                             }
                             int indexOfSelf = -1;
@@ -87,11 +80,6 @@ namespace NFMRadTools.Utilities.Importing
                                     {
                                         g6Wheel.WheelModel = prevG6Mesh.G6WheelIndex;
                                         mesh.G6WheelIndex = prevG6Mesh.G6WheelIndex;
-                                        IntermediateMesh original = Meshes.First(x => x.Mode == mesh.Mode && x.G6WheelIndex == mesh.G6WheelIndex);
-                                        double ratio = mesh.GetBoundingCylinder().Radius / original.GetBoundingCylinder().Radius;
-                                        g6Wheel.Height = (20.0 * ratio).RoundToInt();
-                                        ratio = mesh.GetBoundingCylinder().Width / original.GetBoundingCylinder().Width;
-                                        g6Wheel.Width = (20.0 * ratio).RoundToInt();
                                         found = true;
                                         break;
                                     }

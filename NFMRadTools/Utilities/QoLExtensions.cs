@@ -152,6 +152,36 @@ namespace System
                 }
             }
         }
+
+        public static bool SequenceEqual<T>(this IEnumerable<T> self, IEnumerable<T> other, Func<T,T,bool> comparison)
+        {
+            ArgumentNullException.ThrowIfNull(self);
+            ArgumentNullException.ThrowIfNull(other);
+            ArgumentNullException.ThrowIfNull(comparison);
+
+            IEnumerator<T> selfEnum = self.GetEnumerator();
+            IEnumerator<T> otherEnum = other.GetEnumerator();
+
+            while(true)
+            {
+                bool selfMove = selfEnum.MoveNext();
+                bool otherMove = otherEnum.MoveNext();
+                if (selfMove != otherMove) return false;
+                if (!selfMove) break; 
+                if(!comparison(selfEnum.Current, otherEnum.Current)) return false;
+            }
+            return true;
+        }
+        public static IEnumerable<TNew> Convert<TOld, TNew>(this IEnumerable<TOld> self, Converter<TOld, TNew> converter)
+        {
+            ArgumentNullException.ThrowIfNull(self);
+            ArgumentNullException.ThrowIfNull(converter);
+            foreach(TOld old in self)
+            {
+                yield return converter(old);
+            }
+            yield break;
+        }
         #endregion
 
         #region double

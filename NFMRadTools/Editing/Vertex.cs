@@ -53,4 +53,17 @@ namespace NFMRadTools.Editing
             return X ^ Y ^ Z;
         }
     }
+
+    public sealed class VertexComparer : IComparer<Vertex>
+    {
+        public static VertexComparer Default { get; } = new VertexComparer();
+        public int Compare(Vertex x, Vertex y)
+        {
+            int cmp = x.X.CompareTo(y.X);
+            if (cmp != 0) return cmp;
+            cmp = x.Y.CompareTo(y.Y);
+            if (cmp != 0) return cmp;
+            return x.Z.CompareTo(y.Z);
+        }
+    }
 }
