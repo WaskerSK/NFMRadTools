@@ -80,6 +80,7 @@ namespace NFMRadTools.Editing
         {
             return new Vector3D(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
         }
+        public static Vector3D operator-(Vector3D value) => new Vector3D(-value.X, -value.Y, -value.Z);
 
         public static bool Equals(Vector3D A, Vector3D B) => A.Equals(B);
         public static bool NearlyEquals(Vector3D A, Vector3D B, double Tolerance = 0.00001) => A.NearlyEquals(B, Tolerance);

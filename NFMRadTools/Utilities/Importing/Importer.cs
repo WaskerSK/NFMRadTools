@@ -16,9 +16,11 @@ namespace NFMRadTools.Utilities.Importing
         public abstract bool SupportsExtension(ReadOnlySpan<char> extension);
         public IntermediateCarModel ImportCar(string filename, double importScale, CoordinateSystem? coordinates = default)
         {
-            CoordinateSystem coords = ImportCoordinates;
+            
             IntermediateCarModel model = ImportCar(filename, importScale);
-            if(coordinates.HasValue) coords = coordinates.Value;
+            CoordinateSystem coords;
+            if (coordinates.HasValue) coords = coordinates.Value;
+            else coords = ImportCoordinates;
             return FinalizeImport(model, coords);
         }
         protected abstract IntermediateCarModel ImportCar(string filename, double importScale);

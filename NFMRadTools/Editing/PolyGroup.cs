@@ -15,6 +15,7 @@ namespace NFMRadTools.Editing
         private List<Polygon> _polygons;
         private ReadOnlyCollection<Polygon> _publicPolygons;
         public ReadOnlyCollection<Polygon> Polygons => _publicPolygons ??= new ReadOnlyCollection<Polygon>(_polygons);
+        public DragShotWheelDefinition DragShotWheelDefinition { get; set; }
         //public Wheel WheelDefinition { get; set; }
         public PolyGroupMode Mode 
         {
@@ -140,7 +141,8 @@ namespace NFMRadTools.Editing
             copy._mode = _mode;
             copy.Name = Name;
             copy.CustomWheelIndex = CustomWheelIndex;
-            foreach(Polygon poly in _polygons)
+            copy.DragShotWheelDefinition = DragShotWheelDefinition;
+            foreach (Polygon poly in _polygons)
             {
                 Polygon dupPoly = poly.Duplicate();
                 dupPoly.PolyGroup = copy;

@@ -27,13 +27,8 @@ namespace NFMRadTools.Editing
         public int? Handling { get; set; }
         public RechargedStats RechargedStats { get; set; }
 
-        public DragShotWheelDefinition DragShotWheelDefinition { get; }
-
         public NFMCar()
         {
-            DragShotWheelDefinition = new DragShotWheelDefinition();
-            DragShotWheelDefinition.Radius = 53;
-            DragShotWheelDefinition.Depth = 40;
             PolyGroups = new List<PolyGroup>();
             Metadata = new List<string>();
             Wheels = new List<Wheel>();
@@ -49,6 +44,7 @@ namespace NFMRadTools.Editing
             PolyGroupMode currentMode = PolyGroupMode.Normal;
             PolyGroup currentGroup = null;
             Polygon currentPoly = null;
+            DragShotWheelDefinition dsDefinition = null;
             //Wheel wheel = null;
             int gwgr = 0;
             Color rimColor = new Color(120,120,120);
@@ -110,6 +106,7 @@ namespace NFMRadTools.Editing
                     line = line.Slice("<g=".Length);
                     line = line.Slice(0, line.IndexOf('>'));
                     currentGroup = new PolyGroup();
+                    currentGroup.DragShotWheelDefinition = dsDefinition;
                     if (line.IsEmpty || line.IsWhiteSpace())
                     {
                         currentGroup.Name = RandomName.Get();
@@ -299,38 +296,57 @@ namespace NFMRadTools.Editing
                     currentGroup = null;
                     currentMode = PolyGroupMode.DragShotWheel;
                     line = line.Slice("<wheel".Length).TrimStart();
-                    int choiceIndex = SpanStartsWithChoiceIndex(line, "radius=\"", "depth=\"");
-                    if (choiceIndex == -1) throw new FormatException($"Invalid tag found at line [{sr.Line}]: {sr.LastReadLine.ToString()}");
-                    int radius = 0;
-                    int depth = 0;
-                    DoNTimes doNTimes = new DoNTimes(2);
-                    while(doNTimes.Next())
+                    int choiceIndex = -1;
+                    dsDefinition = new DragShotWheelDefinition();
+                    bool loopTags = true;
+                    while (loopTags)
                     {
-                        if(choiceIndex == -1) throw new FormatException($"Invalid tag found at line [{sr.Line}]: {sr.LastReadLine.ToString()}");
-                        if (choiceIndex == 0) //radius
+                        choiceIndex = SpanStartsWithChoiceIndex(line, "radius=\"", "depth=\"", "target=\"");
+                        switch(choiceIndex)
                         {
-                            line = line.Slice("radius=\"".Length);
-                            ReadOnlySpan<char> radiusChars = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
-                            radius = int.Parse(radiusChars);
-                            line = line.Slice(radiusChars.Length + 1).TrimStart();
+                            default:
+                                loopTags = false;
+                                break;
+                            case 0: //radius
+                                {
+                                    line = line.Slice("radius=\"".Length);
+                                    ReadOnlySpan<char> radiusChars = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
+                                    dsDefinition.Radius = int.Parse(radiusChars);
+                                    line = line.Slice(radiusChars.Length + 1).TrimStart();
+                                    break;
+                                }
+                            case 1: //depth
+                                {
+                                    line = line.Slice("depth=\"".Length);
+                                    ReadOnlySpan<char> depthChars = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
+                                    dsDefinition.Depth = int.Parse(depthChars);
+                                    line = line.Slice(depthChars.Length + 1).TrimStart();
+                                    break;
+                                }
+                            case 2: //target
+                                {
+                                    line = line.Slice("target=\"".Length);
+                                    ReadOnlySpan<char> targetChars = line.Slice(0, line.IndexOf('\"'));
+                                    string[] targetStrings = line.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                                    foreach (string targetString in targetStrings)
+                                    {
+                                        if(int.TryParse(targetString, out int targetIndex))
+                                        {
+                                            dsDefinition.Targets.Add(targetIndex - 1);
+                                        }    
+                                    }
+                                    line = line.Slice(targetChars.Length + 1).TrimStart();
+                                    break;
+                                }
                         }
-                        else //depth
-                        {
-                            line = line.Slice("depth=\"".Length);
-                            ReadOnlySpan<char> depthChars = line.Slice(0, line.GetLengthOfNumericCharactersFromIndex(0));
-                            depth = int.Parse(depthChars);
-                            line = line.Slice(depthChars.Length + 1).TrimStart();
-                        }
-                        choiceIndex = SpanStartsWithChoiceIndex(line, "radius=\"", "depth=\"");
                     }
-                    car.DragShotWheelDefinition.Radius = radius;
-                    car.DragShotWheelDefinition.Depth = depth;
                     continue;
                 }
                 if(line.StartsWith("</wheel>"))
                 {
                     currentMode = PolyGroupMode.Normal;
                     currentGroup = null;
+                    dsDefinition = null;
                     continue;
                 }
                 if(line.StartsWith("wheel("))
@@ -815,48 +831,17 @@ namespace NFMRadTools.Editing
             {
                 sb.AppendLine(g.ToString());
             }
-            IEnumerable<PolyGroup> enumerable = PolyGroups.Where(x => x.Mode == PolyGroupMode.DragShotWheel);
-            if (enumerable.Any())
-            {
-                sb.Append("<wheel radius=\"")
-                    .Append(DragShotWheelDefinition.Radius)
-                    .Append("\" depth=\"")
-                    .Append(DragShotWheelDefinition.Depth)
-                    .AppendLine("\">");
-                foreach (PolyGroup g in enumerable)
-                {
-                    sb.AppendLine(g.ToString());
-                }
-                sb.AppendLine("</wheel>");
-            }
 
-            enumerable = PolyGroups.Where(x => x.Mode == PolyGroupMode.G6Wheel);
-
-            if(enumerable.Any())
-            {
-                foreach (IGrouping<int, PolyGroup> group in enumerable.GroupBy(x => x.CustomWheelIndex).OrderBy(x => x.Key))
-                {
-                    sb.Append("<wheelModel(").Append(group.Key).AppendLine(")>");
-                    sb.AppendLine();
-                    foreach (PolyGroup g in group)
-                        sb.AppendLine(g.ToString());
-                    sb.AppendLine("</wheelModel>");
-                }
-            }
-
-            enumerable = PolyGroups.Where(x => x.Mode == PolyGroupMode.PhyrexianWheel);
-            bool hasPhyWheels = enumerable.Any();
-            Dictionary<int, int> phyWheelIndexMap = null;
-            if (hasPhyWheels)
-            {
-                phyWheelIndexMap = new Dictionary<int, int>(Wheels.Count);
-            }
+            var phyWheelGroups = PolyGroups.Where(x => x.Mode == PolyGroupMode.PhyrexianWheel);
+            bool hasPhyWheels = phyWheelGroups.Any();
+            Dictionary<int, int> wheelMapIndexMap = new Dictionary<int, int>();
+            StringBuilder wheelPartSb = new StringBuilder();
             int wheelIndex = 0;
-            foreach (IGrouping<Wheel.Definition, Wheel> wheelGroup in Wheels.GroupBy(x => x.GetDefinition()))
+            foreach (IGrouping<Wheel.Definition, Wheel> wheelGroup in Wheels.GroupBy(x => x.GetDefinition()).OrderByDescending(x => x.Sum(w => w.Z)))
             {
                 Wheel.Definition def = wheelGroup.Key;
-                sb.Append("gwgr(").Append(def.GwGr).AppendLine(")");
-                sb.Append("rims(")
+                wheelPartSb.Append("gwgr(").Append(def.GwGr).AppendLine(")");
+                wheelPartSb.Append("rims(")
                     .Append(def.RimColor.ToString())
                     .Append(",").Append(def.RimSize)
                     .Append(",").Append(def.RimDepth)
@@ -869,28 +854,68 @@ namespace NFMRadTools.Editing
                 //if (leftWheels.Count() != rightWheels.Count()) throw new InvalidDataException("Wheel counts on left and right side do not match.");
                 foreach (Wheel wheel in leftWheels.OrderByDescending(x => x.Z).Interlace(rightWheels.OrderByDescending(x => x.Z)))
                 {
-                    sb.Append("w(")
+                    wheelPartSb.Append("w(")
                         .Append(wheel.X)
                         .Append(",").Append(wheel.Y)
                         .Append(",").Append(wheel.Z)
                         .Append(",").Append(wheel.CanSteer ? "11" : "0")
                         .Append(",").Append(wheel.WheelModel.HasValue ? int.Abs(wheel.Width) : wheel.Width)
                         .Append(",").Append(wheel.Height);
-                    if(wheel.WheelModel.HasValue)
+                    if (wheel.WheelModel.HasValue)
                     {
-                        sb.Append(",").Append(wheel.WheelModel.Value);
+                        wheelPartSb.Append(",").Append(wheel.WheelModel.Value);
                     }
-                    sb.Append(")");
+                    wheelPartSb.Append(")");
                     if (hasPhyWheels)
                     {
                         sb.Append("c");
-                        int originalIndex = Wheels.IndexOf(wheel);
-                        phyWheelIndexMap.Add(originalIndex, wheelIndex);
                     }
-                    sb.AppendLine();
+                    int originalIndex = Wheels.IndexOf(wheel);
+                    wheelMapIndexMap.Add(originalIndex, wheelIndex);
+                    wheelPartSb.AppendLine();
                     wheelIndex++;
                 }
             }
+
+            var dragShotGroups = PolyGroups.Where(x => x.Mode == PolyGroupMode.DragShotWheel);
+            if (dragShotGroups.Any())
+            {
+                var dsWheelGroups = dragShotGroups.GroupBy(x => x.DragShotWheelDefinition);
+                foreach(var group in dsWheelGroups)
+                {
+                    sb.Append("<wheel radius=\"")
+                    .Append(group.Key.Radius)
+                    .Append("\" depth=\"")
+                    .Append(group.Key.Depth);
+                    if(group.Key.Targets.Any() && group.Key.Targets.Count != Wheels.Count)
+                    {
+                        sb.Append("\" target=\"")
+                            .Append(string.Join(',', group.Key.Targets.Convert(x => wheelMapIndexMap[x] + 1)));
+                    }
+                    sb.AppendLine("\">");
+                    foreach (PolyGroup g in group)
+                    {
+                        sb.AppendLine(g.ToString());
+                    }
+                    sb.AppendLine("</wheel>");
+                }
+            }
+
+            var g6Groups = PolyGroups.Where(x => x.Mode == PolyGroupMode.G6Wheel);
+
+            if(g6Groups.Any())
+            {
+                foreach (IGrouping<int, PolyGroup> group in g6Groups.GroupBy(x => wheelMapIndexMap[x.CustomWheelIndex]).OrderBy(x => x.Key))
+                {
+                    sb.Append("<wheelModel(").Append(wheelMapIndexMap[group.Key]).AppendLine(")>");
+                    sb.AppendLine();
+                    foreach (PolyGroup g in group)
+                        sb.AppendLine(g.ToString());
+                    sb.AppendLine("</wheelModel>");
+                }
+            }
+
+            sb.AppendLine(wheelPartSb.ToString());
 
             if (Stats.HasValue || Physics.HasValue || Handling.HasValue)
                 sb.AppendLine();
@@ -901,7 +926,7 @@ namespace NFMRadTools.Editing
             if (hasPhyWheels)
             {
                 sb.AppendLine();
-                var groups = enumerable.GroupBy(x => phyWheelIndexMap[x.CustomWheelIndex]).OrderBy(x => x.Key);
+                var groups = phyWheelGroups.GroupBy(x => wheelMapIndexMap[x.CustomWheelIndex]).OrderBy(x => x.Key);
                 foreach (var group in groups)
                 {
                     sb.Append("<phy-wheel-").Append(group.Key).AppendLine(">");

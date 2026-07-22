@@ -295,6 +295,11 @@ namespace NFMRadTools.Commanding
                 Logger.Error("Changing between multiple wheel modes is not supported.");
                 return;
             }
+            if (oldMode == NewMode)
+            {
+                Logger.Warning("No changes made. The current custom wheel mode is already the same as the new mode.");
+                return;
+            }
             List<PolyGroup> groups = new List<PolyGroup>(car.PolyGroups.Where(x => x.Mode != PolyGroupMode.Normal));
             Debug.Assert(groups.Count > 0);
             foreach(PolyGroup g in groups)
@@ -305,10 +310,9 @@ namespace NFMRadTools.Commanding
             {
                 case PolyGroupMode.DragShotWheel:
                     {
-                        double offset = car.DragShotWheelDefinition.Depth;
-                        offset /= 2.0;
                         foreach(PolyGroup g in groups)
                         {
+                            double offset = g.DragShotWheelDefinition.Depth / 2.0;
                             foreach(Polygon p in g.Polygons)
                             {
                                 for(int i = 0; i < p.Vertices.Count; i++)
@@ -321,41 +325,83 @@ namespace NFMRadTools.Commanding
                         {
                             case PolyGroupMode.PhyrexianWheel:
                                 {
-                                    foreach(PolyGroup g in groups)
+                                    if(groups.First().DragShotWheelDefinition.Targets.Count == car.Wheels.Count || !groups.First().DragShotWheelDefinition.Targets.Any())
                                     {
-                                        g.Mode = PolyGroupMode.PhyrexianWheel;
-                                        g.CustomWheelIndex = 0;
-                                    }
-                                    IEnumerable<PolyGroup> groupsToDuplicate = groups.Take(groups.Count);
-                                    int i = 1;
-                                    foreach(Wheel w in car.Wheels.Skip(1))
-                                    {
-                                        foreach(PolyGroup g in groupsToDuplicate)
+                                        foreach (PolyGroup g in groups)
                                         {
-                                            PolyGroup clone = g.Duplicate();
-                                            clone.CustomWheelIndex = i;
-                                            if(w.X < 0)
-                                                clone.Mirror(Axis.X, false);
-                                            groups.Add(clone);
+                                            g.Mode = PolyGroupMode.PhyrexianWheel;
+                                            g.CustomWheelIndex = 0;
+                                            g.DragShotWheelDefinition = null;
                                         }
-                                        i++;
-                                    }
-                                    if (car.Wheels[0].X < 0)
-                                    {
-                                        foreach (PolyGroup g in groupsToDuplicate)
+                                        IEnumerable<PolyGroup> groupsToDuplicate = groups.Take(groups.Count);
+                                        int i = 1;
+                                        foreach (Wheel w in car.Wheels.Skip(1))
                                         {
-                                            g.Mirror(Axis.X, false);
+                                            foreach (PolyGroup g in groupsToDuplicate)
+                                            {
+                                                PolyGroup clone = g.Duplicate();
+                                                clone.CustomWheelIndex = i;
+                                                if (w.X < 0)
+                                                    clone.Mirror(Axis.X, false);
+                                                groups.Add(clone);
+                                            }
+                                            i++;
                                         }
+                                        if (car.Wheels[0].X < 0)
+                                        {
+                                            foreach (PolyGroup g in groupsToDuplicate)
+                                            {
+                                                g.Mirror(Axis.X, false);
+                                            }
+                                        }
+                                        break;
                                     }
-                                    break;
+                                    else
+                                    {
+                                        foreach (PolyGroup g in groups)
+                                        {
+                                            DragShotWheelDefinition dsDef = g.DragShotWheelDefinition;
+                                            g.Mode = PolyGroupMode.PhyrexianWheel;
+                                            g.CustomWheelIndex = dsDef.Targets.First();
+                                            g.DragShotWheelDefinition = null;
+                                            bool mirrored = false;
+                                            if (car.Wheels[g.CustomWheelIndex].X < 0)
+                                            {
+                                                g.Mirror(Axis.X, false);
+                                                mirrored = true;
+                                            }
+                                            foreach(int target in dsDef.Targets.Skip(1))
+                                            {
+                                                PolyGroup clone = g.Duplicate();
+                                                clone.CustomWheelIndex = target;
+                                                if (car.Wheels[target].X < 0 && !mirrored)
+                                                    clone.Mirror(Axis.X, false);
+                                                else if (car.Wheels[target].X > 0 && mirrored)
+                                                    clone.Mirror(Axis.X, false);
+                                                groups.Add(clone);
+                                            }
+                                        }
+                                        break;
+                                    }
                                 }
                             case PolyGroupMode.G6Wheel:
                                 {
-                                    foreach (PolyGroup g in groups)
+                                    var wheelModels = groups.GroupBy(x => x.DragShotWheelDefinition);
+                                    int g6wheelModelIndex = 0;
+                                    foreach(var mGroup in wheelModels)
                                     {
-                                        g.Mode = PolyGroupMode.G6Wheel;
-                                        g.CustomWheelIndex = 0;
-                                        g.Mirror(Axis.X, false);
+                                        foreach(PolyGroup g in mGroup)
+                                        {
+                                            g.Mode = PolyGroupMode.G6Wheel;
+                                            g.CustomWheelIndex = g6wheelModelIndex;
+                                            g.Mirror(Axis.X, false);
+                                            g.DragShotWheelDefinition = null;
+                                        }
+                                        foreach(int wheelIndex in mGroup.Key.Targets)
+                                        {
+                                            car.Wheels[wheelIndex].WheelModel = g6wheelModelIndex;
+                                        }
+                                        g6wheelModelIndex++;
                                     }
                                     break;
                                 }
@@ -364,28 +410,70 @@ namespace NFMRadTools.Commanding
                     }
                 case PolyGroupMode.PhyrexianWheel:
                     {
-                        switch(NewMode)
+                        IEnumerable<IGrouping<int, PolyGroup>> wheelGroups = groups.GroupBy(x => x.CustomWheelIndex);
+                        List<IGrouping<int, PolyGroup>> uniqueModels = new List<IGrouping<int, PolyGroup>>();
+                        Dictionary<int, List<int>> wheelMap = new Dictionary<int, List<int>>();
+                        foreach (IGrouping<int, PolyGroup> wheelModel in wheelGroups)
+                        {
+                            IGrouping<int, PolyGroup> match = uniqueModels.FirstOrDefault(x =>
+                            {
+                                if (x.Sum(g => g.Polygons.Sum(p => p.Vertices.Count)) != wheelModel.Sum(g => g.Polygons.Sum(p => p.Vertices.Count)))
+                                    return false;
+                                Cylinder cA = Cylinder.GetFromPolyGroups(wheelModel);
+                                Cylinder cB = Cylinder.GetFromPolyGroups(x);
+                                IOrderedEnumerable<Vertex> Unique = x.SelectMany(g => g.Polygons).SelectMany(p => p.Vertices).Order(VertexComparer.Default);
+                                IEnumerable<Vertex> newVert = wheelModel.SelectMany(g => g.Polygons).SelectMany(p => p.Vertices);
+                                if (int.Sign(car.Wheels[x.Key].X) != int.Sign(car.Wheels[wheelModel.Key].X))
+                                    newVert = newVert.Convert(x => (Vertex)((Vector3D)x * new Vector3D(-1.0, 1.0, 1.0)));
+                                IOrderedEnumerable<Vertex> New = newVert.Order(VertexComparer.Default);
+                                Wheel aWheel = car.Wheels[x.Key];
+                                Wheel bWheel = car.Wheels[wheelModel.Key];
+                                return Unique.SequenceEqual(New, (a, b) =>
+                                {
+                                    int Aradius = cA.Radius.RoundToInt();
+                                    int Awidth = cA.Width.RoundToInt();
+                                    int Bradius = cB.Radius.RoundToInt();
+                                    int Bwidth = cB.Width.RoundToInt();
+                                    double RadiusRatio = (double)Aradius / Bradius;
+                                    double WidthRatio = (double)Awidth / Bwidth;
+                                    return a == (Vertex)((Vector3D)b * new Vector3D(WidthRatio, RadiusRatio, RadiusRatio));
+                                });
+                            });
+                            if (match is null)
+                            {
+                                uniqueModels.Add(wheelModel);
+                                wheelMap.Add(wheelModel.Key, new List<int>() { wheelModel.Key });
+                                continue;
+                            }
+                            wheelMap[match.Key].Add(wheelModel.Key);
+                        }
+                        switch (NewMode)
                         {
                             case PolyGroupMode.DragShotWheel:
                                 {
-                                    groups.RemoveAll(x => x.CustomWheelIndex != 0);
-                                    Cylinder c = Cylinder.GetFromPolyGroups(groups);
-                                    car.DragShotWheelDefinition.Depth = int.Abs(c.Width.RoundToInt());
-                                    car.DragShotWheelDefinition.Radius = c.Radius.RoundToInt();
-                                    double offset = car.DragShotWheelDefinition.Depth;
-                                    offset /= 2.0;
-                                    bool mirror = car.Wheels[0].X < 0;
-                                    foreach (PolyGroup g in groups)
+                                    foreach(var uniqueModel in uniqueModels)
                                     {
-                                        g.Mode = PolyGroupMode.DragShotWheel;
-                                        if(mirror) g.Mirror(Axis.X, false);
-
-                                        foreach (Polygon p in g.Polygons)
+                                        bool mirror = car.Wheels[uniqueModel.Key].X < 0;
+                                        DragShotWheelDefinition dsDef = new DragShotWheelDefinition();
+                                        Cylinder c = Cylinder.GetFromPolyGroups(uniqueModel);
+                                        dsDef.Depth = int.Abs(c.Width.RoundToInt());
+                                        dsDef.Radius = c.Radius.RoundToInt();
+                                        double offset = dsDef.Depth;
+                                        offset /= 2.0;
+                                        foreach (PolyGroup g in uniqueModel)
                                         {
-                                            for (int i = 0; i < p.Vertices.Count; i++)
+                                            g.Mode = PolyGroupMode.DragShotWheel;
+                                            g.CustomWheelIndex = 0;
+                                            g.DragShotWheelDefinition = dsDef;
+                                            g.DragShotWheelDefinition.Targets.AddRange(wheelMap[uniqueModel.Key]);
+                                            if(mirror) g.Mirror(Axis.X, false);
+                                            foreach (Polygon p in g.Polygons)
                                             {
-                                                Vector3D v = (Vector3D)p.Vertices[i];
-                                                p.Vertices[i] = (Vertex)(v + new Vector3D(offset, 0.0, 0.0));
+                                                for (int i = 0; i < p.Vertices.Count; i++)
+                                                {
+                                                    Vector3D v = (Vector3D)p.Vertices[i];
+                                                    p.Vertices[i] = (Vertex)(v + new Vector3D(offset, 0.0, 0.0));
+                                                }
                                             }
                                         }
                                     }
@@ -397,43 +485,6 @@ namespace NFMRadTools.Commanding
                                 }
                             case PolyGroupMode.G6Wheel:
                                 {
-                                    IEnumerable<IGrouping<int, PolyGroup>> wheelGroups = groups.GroupBy(x => x.CustomWheelIndex);
-                                    List<IGrouping<int, PolyGroup>> uniqueModels = new List<IGrouping<int, PolyGroup>>();
-                                    Dictionary<int, List<int>> wheelMap = new Dictionary<int, List<int>>();
-                                    foreach(IGrouping<int, PolyGroup> wheelModel in wheelGroups)
-                                    {
-                                        IGrouping<int, PolyGroup> match = uniqueModels.FirstOrDefault(x =>
-                                        {
-                                            if (x.Sum(g => g.Polygons.Sum(p => p.Vertices.Count)) != wheelModel.Sum(g => g.Polygons.Sum(p => p.Vertices.Count)))
-                                                return false;
-                                            Cylinder cA = Cylinder.GetFromPolyGroups(wheelModel);
-                                            Cylinder cB = Cylinder.GetFromPolyGroups(x);
-                                            IOrderedEnumerable<Vertex> Unique = x.SelectMany(g => g.Polygons).SelectMany(p => p.Vertices).Order(VertexComparer.Default);
-                                            IEnumerable<Vertex> newVert = wheelModel.SelectMany(g => g.Polygons).SelectMany(p => p.Vertices);
-                                            if (int.Sign(car.Wheels[x.Key].X) != int.Sign(car.Wheels[wheelModel.Key].X))
-                                                newVert = newVert.Convert(x => (Vertex)((Vector3D)x * new Vector3D(-1.0, 1.0, 1.0)));
-                                            IOrderedEnumerable<Vertex> New = newVert.Order(VertexComparer.Default);
-                                            Wheel aWheel = car.Wheels[x.Key];
-                                            Wheel bWheel = car.Wheels[wheelModel.Key];
-                                            return Unique.SequenceEqual(New, (a, b) =>
-                                            {
-                                                int Aradius = cA.Radius.RoundToInt();
-                                                int Awidth = cA.Width.RoundToInt();
-                                                int Bradius = cB.Radius.RoundToInt();
-                                                int Bwidth = cB.Width.RoundToInt();
-                                                double RadiusRatio = (double)Aradius / Bradius;
-                                                double WidthRatio = (double)Awidth / Bwidth;
-                                                return a == (Vertex)((Vector3D)b * new Vector3D(WidthRatio, RadiusRatio, RadiusRatio));
-                                            });
-                                        });
-                                        if (match is null)
-                                        {
-                                            uniqueModels.Add(wheelModel);
-                                            wheelMap.Add(wheelModel.Key, new List<int>() { wheelModel.Key});
-                                            continue;
-                                        }
-                                        wheelMap[match.Key].Add(wheelModel.Key);
-                                    }
                                     groups.Clear();
                                     for(int i = 0; i < uniqueModels.Count; i++)
                                     {

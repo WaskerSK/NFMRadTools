@@ -11,6 +11,7 @@ namespace NFMRadTools.Editing
     {
         public int Radius { get; set; }
         public int Depth { get; set; }
+        public List<int> Targets { get; } = new List<int>();
 
         public DragShotWheelDefinition()
         {
